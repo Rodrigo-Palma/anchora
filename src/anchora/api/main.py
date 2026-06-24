@@ -53,6 +53,11 @@ class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     k: int = Field(default=settings.top_k, ge=1, le=20)
     use_llm: bool = True
+    provider: str | None = Field(
+        default=None,
+        description="Embedding provider for the query; must match how the store "
+        'was indexed ("ollama" or "hash").',
+    )
 
 
 class ToolCallOut(BaseModel):
@@ -117,7 +122,7 @@ def create_app() -> FastAPI:
         pii_found = bool(detect_pii(req.question))
         question = redact_pii(req.question) if pii_found else req.question
         store = get_store()
-        agent = Agent(store, k=req.k, use_llm=req.use_llm)
+        agent = Agent(store, k=req.k, provider=req.provider, use_llm=req.use_llm)
         result = agent.run(question)
         return AskResponse(
             question=question,

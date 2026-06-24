@@ -126,7 +126,7 @@ curl -s localhost:8000/health
 curl -s -X POST localhost:8000/ingest -H 'content-type: application/json' \
   -d '{"provider":"hash"}'
 curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
-  -d '{"question":"What are the bidding modalities?","use_llm":false}'
+  -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
 ```
 
 Set `ANCHORA_API_KEY` (or `api_key` in `.env`) to require the `x-api-key` header.

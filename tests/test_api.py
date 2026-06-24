@@ -30,7 +30,7 @@ def test_ask_offline(client: TestClient) -> None:
     client.post("/ingest", json={"provider": "hash"})
     resp = client.post(
         "/ask",
-        json={"question": "What are the bidding modalities?", "use_llm": False},
+        json={"question": "What are the bidding modalities?", "use_llm": False, "provider": "hash"},
     )
     assert resp.status_code == 200
     body = resp.json()
@@ -45,6 +45,7 @@ def test_ask_redacts_pii(client: TestClient) -> None:
         json={
             "question": "My CPF 123.456.789-09: what is the appeal deadline?",
             "use_llm": False,
+            "provider": "hash",
         },
     )
     body = resp.json()

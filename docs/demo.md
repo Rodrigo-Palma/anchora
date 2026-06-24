@@ -78,7 +78,7 @@ In another terminal:
 ```bash
 curl -s localhost:8000/health
 curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
-  -d '{"question":"What are the bidding modalities?","use_llm":false}' | jq
+  -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}' | jq
 ```
 
 ## 8. ML pipeline (dry-run, executes nothing)
