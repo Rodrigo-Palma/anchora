@@ -1,0 +1,150 @@
+{
+  "description": "Golden evaluation set for anchora — Brazilian legal/administrative RAG. Questions are in English; the corpus and reference answers stay in Portuguese (real Brazilian law). Each case maps a question to the document that should be retrieved (expected_doc) and a reference answer used for qualitative review.",
+  "version": "2.0",
+  "cases": [
+    {
+      "id": "lai-prazo",
+      "question": "What is the deadline for a public agency to respond to an access to information request?",
+      "expected_doc": "lai.md",
+      "reference_answer": "Até 20 dias, prorrogável por mais 10 dias mediante justificativa."
+    },
+    {
+      "id": "lai-recurso",
+      "question": "When access to information is denied, what is the deadline to appeal to the higher authority?",
+      "expected_doc": "lai.md",
+      "reference_answer": "10 dias contados da ciência da decisão."
+    },
+    {
+      "id": "lai-classificacao",
+      "question": "What are the maximum secrecy terms for reserved, secret and top-secret information?",
+      "expected_doc": "lai.md",
+      "reference_answer": "5, 15 e 25 anos respectivamente."
+    },
+    {
+      "id": "8112-posse",
+      "question": "What is the deadline for a civil servant to take office after the appointment is published in the federal public service?",
+      "expected_doc": "lei-8112.md",
+      "reference_answer": "30 dias contados da publicação do ato de nomeação."
+    },
+    {
+      "id": "8112-estagio",
+      "question": "How long does the probationary period of a federal civil servant last?",
+      "expected_doc": "lei-8112.md",
+      "reference_answer": "36 meses."
+    },
+    {
+      "id": "8112-penalidades",
+      "question": "What disciplinary penalties apply to a federal civil servant?",
+      "expected_doc": "lei-8112.md",
+      "reference_answer": "Advertência, suspensão, demissão, cassação de aposentadoria, destituição de cargo em comissão e destituição de função."
+    },
+    {
+      "id": "defensoria-principios",
+      "question": "What are the institutional principles of the Public Defender's Office?",
+      "expected_doc": "defensoria-publica.md",
+      "reference_answer": "Unidade, indivisibilidade e independência funcional."
+    },
+    {
+      "id": "defensoria-publico",
+      "question": "Who is entitled to the legal assistance provided by the Public Defender?",
+      "expected_doc": "defensoria-publica.md",
+      "reference_answer": "Os hipossuficientes, que comprovem insuficiência de recursos."
+    },
+    {
+      "id": "defensoria-ingresso",
+      "question": "How does one enter the career of Public Defender?",
+      "expected_doc": "defensoria-publica.md",
+      "reference_answer": "Mediante concurso público de provas e títulos."
+    },
+    {
+      "id": "lgpd-sensivel",
+      "question": "What is sensitive personal data under the LGPD?",
+      "expected_doc": "lgpd.md",
+      "reference_answer": "Dado sobre origem racial, convicção religiosa, opinião política, saúde, vida sexual, dado genético ou biométrico."
+    },
+    {
+      "id": "lgpd-agentes",
+      "question": "Who are the data processing agents under the LGPD?",
+      "expected_doc": "lgpd.md",
+      "reference_answer": "O controlador e o operador; o encarregado (DPO) é o canal de comunicação."
+    },
+    {
+      "id": "lgpd-direitos",
+      "question": "What rights does the data subject have over their personal data under the LGPD?",
+      "expected_doc": "lgpd.md",
+      "reference_answer": "Confirmação, acesso, correção, anonimização, portabilidade e eliminação."
+    },
+    {
+      "id": "cpc-uteis",
+      "question": "Are procedural time limits in days counted in business days or calendar days under the new CPC?",
+      "expected_doc": "cpc-prazos.md",
+      "reference_answer": "Somente em dias úteis; excluem-se sábados, domingos e feriados."
+    },
+    {
+      "id": "cpc-contestacao",
+      "question": "What is the deadline for contestation in civil procedure?",
+      "expected_doc": "cpc-prazos.md",
+      "reference_answer": "15 dias úteis."
+    },
+    {
+      "id": "cpc-prazo-dobro",
+      "question": "Who is entitled to double time limits in procedural filings?",
+      "expected_doc": "cpc-prazos.md",
+      "reference_answer": "A Fazenda Pública, o Ministério Público e a Defensoria Pública."
+    },
+    {
+      "id": "licitacao-modalidades",
+      "question": "What are the bidding modalities under the new Procurement Law?",
+      "expected_doc": "licitacoes.md",
+      "reference_answer": "Pregão, concorrência, concurso, leilão e diálogo competitivo."
+    },
+    {
+      "id": "licitacao-extintas",
+      "question": "Which bidding modalities were abolished by Law 14.133/2021?",
+      "expected_doc": "licitacoes.md",
+      "reference_answer": "Convite e tomada de preços."
+    },
+    {
+      "id": "licitacao-pncp",
+      "question": "Which portal was created for the centralized disclosure of public procurement?",
+      "expected_doc": "licitacoes.md",
+      "reference_answer": "O Portal Nacional de Contratações Públicas (PNCP)."
+    },
+    {
+      "id": "proc-adm-recurso",
+      "question": "What is the appeal deadline in the federal administrative process under Law 9.784?",
+      "expected_doc": "processo-administrativo.md",
+      "reference_answer": "10 dias contados da ciência da decisão."
+    },
+    {
+      "id": "proc-adm-decisao",
+      "question": "How long does the Administration have to decide once the administrative proceeding's instruction is concluded?",
+      "expected_doc": "processo-administrativo.md",
+      "reference_answer": "Até 30 dias, prorrogável por igual período."
+    },
+    {
+      "id": "proc-adm-decadencia",
+      "question": "In how many years does the Administration's right to annul acts favorable to the citizen lapse?",
+      "expected_doc": "processo-administrativo.md",
+      "reference_answer": "5 anos, salvo comprovada má-fé."
+    },
+    {
+      "id": "gratuidade-abrange",
+      "question": "What court costs and fees does the free justice benefit cover?",
+      "expected_doc": "gratuidade-justica.md",
+      "reference_answer": "Custas, taxas judiciais, despesas com publicação, honorários de perito e de sucumbência, entre outras."
+    },
+    {
+      "id": "gratuidade-pedido",
+      "question": "How can a natural person request free justice?",
+      "expected_doc": "gratuidade-justica.md",
+      "reference_answer": "Pela simples afirmação de insuficiência de recursos, presumida verdadeira."
+    },
+    {
+      "id": "gratuidade-suspensiva",
+      "question": "For how long is the enforceability of the beneficiary's expenses suspended?",
+      "expected_doc": "gratuidade-justica.md",
+      "reference_answer": "5 anos."
+    }
+  ]
+}
