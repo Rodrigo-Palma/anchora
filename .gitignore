@@ -1,0 +1,38 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+
+# Environments
+.venv/
+.env
+
+# uv
+# (uv.lock IS committed)
+
+# Test / coverage / type caches
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# ML artifacts (models, adapters, registry, eval reports)
+artifacts/
+
+# Terraform
+infra/.terraform/
+infra/*.tfstate
+infra/*.tfstate.*
+infra/.terraform.lock.hcl
+infra/*.tfplan
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/
