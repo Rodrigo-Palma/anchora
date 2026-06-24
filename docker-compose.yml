@@ -1,0 +1,27 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama:/root/.ollama
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      # Point the app at the Ollama service; override for hash/offline mode.
+      ANCHORA_OLLAMA_BASE_URL: http://ollama:11434
+      ANCHORA_EMBED_PROVIDER: ollama
+    depends_on:
+      ollama:
+        condition: service_healthy
+
+volumes:
+  ollama:
