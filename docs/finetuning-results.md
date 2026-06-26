@@ -413,6 +413,26 @@ Lesson worth keeping: the fix (teach abstention) and its dosage (how much) are t
 separate decisions. The first needs a held-out eval to even see; the second needs
 a sweep. Neither is visible from a single train==test number.
 
+### Closing the MLOps loop — promote on honest metrics, with a gate
+
+`scripts/register_finetune.py` writes each adapter's *held-out* metrics into the
+model registry and promotes to `prod` only if it does not regress on a gate of
+`{citation_accuracy, abstention_rate}` (`registry.regressions`). Registering the
+three candidates in turn:
+
+```
+Promoted anchora-qa:v0.3-lora0  to prod (no incumbent).
+Promoted anchora-qa:v0.3-lora5  to prod (no regression on citation/abstention).
+REJECTED anchora-qa:v0.3-lora10: regressed on citation_accuracy 0.818->0.636;
+         keeping anchora-qa:v0.3-lora5 in prod.
+```
+
+The gate does exactly what the headline 0.92 could never do: it **rejects** the
+over-cautious 10-abstention adapter automatically, because the promotion rule is
+written against metrics that measure real behavior on unseen data. Final prod:
+`v0.3-lora5`. (The registry file lives under `artifacts/` and is not tracked; the
+capability is the code and the gate, not the JSON.)
+
 ## Next Iteration
 
 Reordered — a defensible eval comes before a bigger model. Item 1 is done (see
@@ -433,9 +453,10 @@ the holdout results above); the failure it surfaced sets the new top priority:
 5. Only then scale training data (200–500 synthetic, source-grounded records),
    keeping the holdout strictly separate — and re-sweep the abstention ratio at
    the new scale.
-6. A promotion rule (already encoded in `registry.py`): promote only if the
-   holdout metrics improve without answer drift **and** abstention does not
-   regress.
+6. ✅ A promotion rule wired to the honest metrics: `register_finetune.py` +
+   `registry.regressions` promote to prod only if neither citation accuracy nor
+   abstention regresses. It auto-rejected the 10-abstention adapter; prod is
+   `v0.3-lora5`.
 
 Deliberately **not** on the list: a larger base model (`Qwen2.5-3B`). A bigger
 model on a leaked eval is the same problem with more GPU. Fix the methodology

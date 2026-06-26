@@ -90,3 +90,32 @@ def test_list_filters_by_name(tmp_path: Path) -> None:
     assert reg.list_models("other") == []
     assert len(reg.list_models("anchora-qa")) == 1
     assert len(reg.list_models()) == 1
+
+
+def test_regressions_flags_only_metrics_that_drop() -> None:
+    from anchora.registry import regressions
+
+    incumbent = ModelCard(
+        name="anchora-qa",
+        version="lora5",
+        base_model="qwen",
+        metrics={"citation_accuracy": 0.818, "abstention_rate": 0.833},
+    )
+    # the 10-abstention mix gains nothing and loses citation accuracy
+    worse = ModelCard(
+        name="anchora-qa",
+        version="lora10",
+        base_model="qwen",
+        metrics={"citation_accuracy": 0.636, "abstention_rate": 0.833},
+    )
+    assert regressions(worse, incumbent, ("citation_accuracy", "abstention_rate")) == [
+        "citation_accuracy"
+    ]
+    # a strictly-better candidate regresses on nothing
+    better = ModelCard(
+        name="anchora-qa",
+        version="lora5b",
+        base_model="qwen",
+        metrics={"citation_accuracy": 0.83, "abstention_rate": 0.85},
+    )
+    assert regressions(better, incumbent, ("citation_accuracy", "abstention_rate")) == []

@@ -13,7 +13,7 @@ offline and to reason about in code review.
 from __future__ import annotations
 
 import json
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
@@ -115,3 +115,20 @@ class ModelRegistry:
 
     def __len__(self) -> int:
         return len(self._cards)
+
+
+def regressions(
+    candidate: ModelCard, incumbent: ModelCard, keys: Iterable[str], *, eps: float = 1e-9
+) -> list[str]:
+    """Metrics (higher-is-better) on which ``candidate`` scores below ``incumbent``.
+
+    A multi-criteria promotion gate: an empty list means the candidate does not
+    regress on any of ``keys`` and is safe to promote. Used to reject a model that
+    trades one metric for another — e.g. an adapter that gains abstention but loses
+    citation accuracy. A missing metric is treated as 0.0 (worst).
+    """
+    return [
+        key
+        for key in keys
+        if candidate.metrics.get(key, 0.0) + eps < incumbent.metrics.get(key, 0.0)
+    ]
