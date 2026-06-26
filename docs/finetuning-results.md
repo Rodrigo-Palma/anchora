@@ -354,6 +354,36 @@ adapter never abstained. I fixed that with abstention data; it now refuses half
 the out-of-corpus questions, at a measured cost to answer precision I can show you
 in a table."*
 
+### Measuring the right thing (rec #3) — two metrics that move in opposite directions
+
+`grounded_rate` only asks "is a `[n]` present?" and the exact-English abstention
+check only matches one sentence. Both mis-measure real behavior. I added
+`metrics.citation_correct` (does the cited index resolve to the *expected*
+document?) and `guardrails.is_abstention` (recognize Portuguese refusals too), and
+re-scored the existing run outputs — no re-generation needed, retrieval is
+deterministic.
+
+| Adapter | Grounded (bracket present) | **Citation-correct** | Abstention (exact EN) | **Abstention (PT-aware)** |
+|---|---:|---:|---:|---:|
+| base + few-shot          | 0.636 | 0.500 | 0.167 | 0.167 |
+| LoRA (answerable-only)   | 0.864 | 0.773 | 0.000 | 0.167 |
+| LoRA + abstention        | 0.864 | **0.636** | 0.500 | **0.833** |
+
+Two honest corrections, pointing opposite ways:
+
+* **Grounding was optimistic.** A chunk of the 0.864 "grounded" was a bracket
+  pointing at the *wrong* document. Real citation accuracy is **0.64–0.77**, and
+  the abstention-trained adapter pays more here (0.636) because it hedges more.
+  Still clearly above base+few-shot (0.500) — the win survives the stricter metric.
+* **Abstention was pessimistic.** The exact-English check scored the
+  abstention-trained adapter at 0.500, but it actually refuses **5 of 6**
+  out-of-corpus questions (0.833) — it just does so in Portuguese. The fix worked
+  far better than the first metric admitted.
+
+The net, under metrics that measure what they claim to: the abstention-trained
+adapter beats base+few-shot on **both** honest grounding (0.64 vs 0.50) **and**
+abstention (0.83 vs 0.17). That is the defensible v0.3 result.
+
 ## Next Iteration
 
 Reordered — a defensible eval comes before a bigger model. Item 1 is done (see
@@ -364,12 +394,15 @@ the holdout results above); the failure it surfaced sets the new top priority:
 2. ✅ **Teach abstention** — done. Abstention 0.000 → 0.500 with grounding held,
    at a measured cost to faithfulness/overlap. Next sub-step: **tune the abstention
    ratio** (try ~5/29 instead of 10/34) to recover answer precision.
-3. **Add a citation-correctness metric** (cited index resolves to the expected
-   document) and accept Portuguese refusals, replacing presence-of-bracket and
-   exact-English-string as the signals — both currently mis-score real behavior.
-4. Only then scale training data (200–500 synthetic, source-grounded records),
+3. ✅ **Citation-correctness metric + Portuguese refusal detection** — done.
+   Real citation accuracy is 0.64–0.77 (not the 0.86 bracket-presence number);
+   real abstention after training is 0.83 (not 0.50). The adapter still wins on
+   both honest metrics.
+4. **Tune the abstention ratio** (≈5/29 vs the current 10/34) to recover the
+   faithfulness/citation precision the abstention training cost.
+5. Only then scale training data (200–500 synthetic, source-grounded records),
    keeping the holdout strictly separate.
-5. A promotion rule (already encoded in `registry.py`): promote only if the
+6. A promotion rule (already encoded in `registry.py`): promote only if the
    holdout metrics improve without answer drift **and** abstention does not
    regress.
 
