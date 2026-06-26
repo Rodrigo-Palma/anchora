@@ -1,0 +1,47 @@
+{
+  "description": "Training-only out-of-corpus questions used to teach the adapter to ABSTAIN. None of these are answerable from the 8 corpus documents, so the correct completion is the exact refusal sentence with no citation. These are DISJOINT from data/golden/holdout.json (the held-out abstention cases) so the abstention skill is evaluated on unseen refusals. Never add these to the golden eval set.",
+  "version": "1.0",
+  "refusal": "I could not find this information in the provided documents.",
+  "questions": [
+    {
+      "id": "abs-cdc-arrependimento",
+      "question": "What is the reflection period to cancel an online purchase under the Consumer Defense Code?"
+    },
+    {
+      "id": "abs-fgts-saque",
+      "question": "Under what conditions can a worker withdraw their FGTS balance?"
+    },
+    {
+      "id": "abs-licenca-maternidade",
+      "question": "How long is maternity leave for a formally employed worker in Brazil?"
+    },
+    {
+      "id": "abs-voto-obrigatorio",
+      "question": "At what age does voting become mandatory for Brazilian citizens?"
+    },
+    {
+      "id": "abs-aposentadoria-idade",
+      "question": "What is the minimum retirement age under the general social security regime?"
+    },
+    {
+      "id": "abs-juizado-teto",
+      "question": "What is the monetary ceiling of the small claims civil courts (juizados especiais)?"
+    },
+    {
+      "id": "abs-divorcio-prazo",
+      "question": "Is there a mandatory waiting period before a divorce can be granted in Brazil?"
+    },
+    {
+      "id": "abs-ipva-aliquota",
+      "question": "What is the IPVA tax rate applied to passenger vehicles?"
+    },
+    {
+      "id": "abs-heranca-legitima",
+      "question": "What portion of an estate is reserved for necessary heirs under Brazilian inheritance law?"
+    },
+    {
+      "id": "abs-doacao-campanha",
+      "question": "What is the limit for individual donations to electoral campaigns in Brazil?"
+    }
+  ]
+}
