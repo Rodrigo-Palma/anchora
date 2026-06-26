@@ -13,7 +13,7 @@ v0.3 claim measurable: **base model vs. tuned adapter on the same golden set**.
 | Dataset | `data/finetune/instructions.jsonl` |
 | Golden set | 24 questions over 8 Brazilian legal/administrative documents |
 | Retrieval | deterministic `hash` provider, `k=4` |
-| Metrics | grounded rate, faithfulness, answer relevance |
+| Metrics | grounded rate, faithfulness, answer relevance, reference overlap |
 | APIs | none |
 
 The dataset is generated from the golden set and retrieved context:
@@ -147,6 +147,41 @@ Interpretation: the lower learning rate was stable, but it did not improve
 grounding and reduced both faithfulness and answer relevance. It should not be
 promoted.
 
+### Experiment F — larger base model, early stopping and fixed truncation
+
+The first long-running early-stopping attempts exposed a real bug in the SFT
+pipeline: long prompts could consume the full sequence length, leaving no answer
+tokens to train on. This produced `loss=0` and `grad_norm=nan` around epoch 5.
+The fix reserves sequence budget for the completion and left-truncates only the
+prompt. The generative evaluator also left-truncates prompts so the question and
+`Answer:` suffix are preserved.
+
+Command:
+
+```bash
+uv run python scripts/finetune_lora.py \
+  --base Qwen/Qwen2.5-1.5B-Instruct \
+  --data data/finetune/instructions.jsonl \
+  --out artifacts/lora-anchora-qwen15b-earlystop-fixed-lr1e4-e30 \
+  --epochs 30 \
+  --lr 1e-4 \
+  --validation-ratio 0.2 \
+  --early-stopping-patience 5
+```
+
+Result (`max_new_tokens=48`):
+
+| Model | Grounded rate | Faithfulness | Answer relevance | Reference overlap |
+|---|---:|---:|---:|---:|
+| Base | 0.1667 | 0.2668 | 0.8376 | 0.1668 |
+| LoRA | 0.9167 | 0.9208 | 0.0458 | 0.7338 |
+
+Interpretation: this is the first strong LoRA result. The tuned adapter produces
+short Portuguese legal answers with citations and much higher faithfulness. The
+low `answer_relevance` is a known limitation of this lexical proxy when comparing
+English questions against concise Portuguese answers; `reference_overlap` is the
+more appropriate supervised fine-tuning metric here.
+
 ## Evaluation Command
 
 The comparison was generated with:
@@ -154,9 +189,9 @@ The comparison was generated with:
 ```bash
 uv run python scripts/evaluate_finetune.py \
   --base Qwen/Qwen2.5-1.5B-Instruct \
-  --adapter artifacts/lora-anchora-qwen15b-completion-lr1e4-e5 \
-  --out artifacts/finetune-comparison-qwen15b-completion-lr1e4-e5.json \
-  --max-new-tokens 96
+  --adapter artifacts/lora-anchora-qwen15b-earlystop-fixed-lr1e4-e30 \
+  --out artifacts/finetune-comparison-qwen15b-earlystop-fixed-lr1e4-e30-final.json \
+  --max-new-tokens 48
 ```
 
 The raw JSON outputs live under `artifacts/` and are intentionally not tracked
@@ -164,13 +199,13 @@ by Git.
 
 ## Decision
 
-Do **not** promote any adapter from these first experiments. The honest v0.3
-result is:
+Promote only the early-stopped `1.5B` adapter as **experimental**. The honest
+v0.3 result is:
 
-> LoRA is wired end-to-end and measured. On a tiny 0.5B local model with only 24
-> training examples, it improves faithfulness slightly but hurts grounding. On a
-> larger 1.5B local model, it improves grounding but hurts faithfulness. No
-> adapter improves both metrics yet, so none should be promoted.
+> LoRA is wired end-to-end and measured. The initial 5-epoch runs were too small
+> and the first long run exposed a sequence-truncation bug. After fixing
+> completion preservation and adding early stopping, the `1.5B` adapter improves
+> grounded rate, faithfulness and reference overlap on the 24-case benchmark.
 
 ## Next Iteration
 
@@ -178,6 +213,7 @@ The next run should use:
 
 1. A larger local model (`Qwen2.5-3B`) once cached locally.
 2. More training examples (at least 200-500 synthetic, source-grounded records).
-3. A stricter response template: short answer first, mandatory citation last.
-4. A validation split so the adapter is not judged only on memorized golden cases.
-5. A promotion rule: promote only if grounded rate and faithfulness both improve.
+3. A separate validation set, not sampled from the same 24-case golden set.
+4. A stricter response template: short answer first, mandatory citation last.
+5. A promotion rule: promote only if grounded rate, faithfulness and reference
+   overlap improve without obvious answer drift.

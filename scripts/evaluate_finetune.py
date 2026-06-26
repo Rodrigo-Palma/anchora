@@ -40,6 +40,7 @@ class GenerationScore:
     grounded: bool
     faithfulness: float
     answer_relevance: float
+    reference_overlap: float
 
 
 @dataclass
@@ -61,6 +62,10 @@ class GenerationReport:
     def mean_answer_relevance(self) -> float:
         return _mean(score.answer_relevance for score in self.scores)
 
+    @property
+    def mean_reference_overlap(self) -> float:
+        return _mean(score.reference_overlap for score in self.scores)
+
     def summary(self) -> dict[str, float | str | None]:
         return {
             "name": self.name,
@@ -69,6 +74,7 @@ class GenerationReport:
             "grounded_rate": self.grounded_rate,
             "faithfulness": self.mean_faithfulness,
             "answer_relevance": self.mean_answer_relevance,
+            "reference_overlap": self.mean_reference_overlap,
         }
 
 
@@ -102,6 +108,7 @@ def evaluate(
                 grounded=grounded,
                 faithfulness=metrics.faithfulness(answer, context),
                 answer_relevance=metrics.answer_relevance(answer, case["question"]),
+                reference_overlap=metrics.answer_relevance(answer, case["reference_answer"]),
             )
         )
     return GenerationReport(
@@ -137,7 +144,12 @@ def _generate(tokenizer: Any, model: Any, prompt: str, *, max_new_tokens: int) -
     import torch
 
     device = next(model.parameters()).device
-    inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024).to(device)
+    previous_truncation_side = tokenizer.truncation_side
+    tokenizer.truncation_side = "left"
+    try:
+        inputs = tokenizer(prompt, return_tensors="pt", truncation=True, max_length=1024).to(device)
+    finally:
+        tokenizer.truncation_side = previous_truncation_side
     with torch.no_grad():
         output_ids = model.generate(
             **inputs,

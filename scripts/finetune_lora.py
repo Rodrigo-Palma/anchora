@@ -39,6 +39,9 @@ class TrainConfig:
     lora_r: int = 16
     lora_alpha: int = 32
     lora_dropout: float = 0.05
+    validation_ratio: float = 0.2
+    early_stopping_patience: int = 4
+    early_stopping_threshold: float = 0.0
     seed: int = 42
 
 
@@ -48,8 +51,23 @@ def _tokenize_completion(
     """Tokenize prompt + answer while masking the prompt from the loss."""
     prompt = record["instruction"]
     completion = f" {record['output']}{tokenizer.eos_token or ''}"
-    prompt_ids = tokenizer(prompt, add_special_tokens=True)["input_ids"]
     completion_ids = tokenizer(completion, add_special_tokens=False)["input_ids"]
+    if len(completion_ids) >= max_seq_len:
+        completion_ids = completion_ids[:max_seq_len]
+        prompt_ids: list[int] = []
+    else:
+        max_prompt_len = max_seq_len - len(completion_ids)
+        previous_truncation_side = tokenizer.truncation_side
+        tokenizer.truncation_side = "left"
+        try:
+            prompt_ids = tokenizer(
+                prompt,
+                add_special_tokens=True,
+                truncation=True,
+                max_length=max_prompt_len,
+            )["input_ids"]
+        finally:
+            tokenizer.truncation_side = previous_truncation_side
     input_ids = (prompt_ids + completion_ids)[:max_seq_len]
     prompt_len = min(len(prompt_ids), len(input_ids))
     labels = [-100] * prompt_len + input_ids[prompt_len:]
@@ -89,7 +107,9 @@ def train(cfg: TrainConfig) -> Path:
     from transformers import (
         AutoModelForCausalLM,
         AutoTokenizer,
+        EarlyStoppingCallback,
         Trainer,
+        TrainerCallback,
         TrainingArguments,
         set_seed,
     )
@@ -124,6 +144,24 @@ def train(cfg: TrainConfig) -> Path:
         lambda rec: _tokenize_completion(rec, tokenizer, cfg.max_seq_len),
         remove_columns=dataset.column_names,
     )
+    if cfg.validation_ratio > 0:
+        split = tokenized.train_test_split(test_size=cfg.validation_ratio, seed=cfg.seed)
+        train_dataset = split["train"]
+        eval_dataset = split["test"]
+        callbacks: list[TrainerCallback] = [
+            EarlyStoppingCallback(
+                early_stopping_patience=cfg.early_stopping_patience,
+                early_stopping_threshold=cfg.early_stopping_threshold,
+            )
+        ]
+        eval_strategy = "epoch"
+        load_best_model_at_end = True
+    else:
+        train_dataset = tokenized
+        eval_dataset = None
+        callbacks = []
+        eval_strategy = "no"
+        load_best_model_at_end = False
 
     args = TrainingArguments(
         output_dir=str(cfg.out_dir),
@@ -132,15 +170,22 @@ def train(cfg: TrainConfig) -> Path:
         gradient_accumulation_steps=cfg.grad_accum,
         learning_rate=cfg.learning_rate,
         logging_steps=1,
+        eval_strategy=eval_strategy,
         save_strategy="epoch",
+        save_total_limit=2,
+        load_best_model_at_end=load_best_model_at_end,
+        metric_for_best_model="eval_loss",
+        greater_is_better=False,
         report_to=[],
         seed=cfg.seed,
     )
     trainer = Trainer(
         model=model,
         args=args,
-        train_dataset=tokenized,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset,
         data_collator=CompletionCollator(tokenizer),
+        callbacks=callbacks,
     )
     trainer.train()
 
@@ -158,6 +203,9 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--out", type=Path, default=Path("artifacts/lora-anchora"))
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--lr", type=float, default=2e-4)
+    parser.add_argument("--validation-ratio", type=float, default=0.2)
+    parser.add_argument("--early-stopping-patience", type=int, default=4)
+    parser.add_argument("--early-stopping-threshold", type=float, default=0.0)
     args = parser.parse_args(argv)
 
     cfg = TrainConfig(
@@ -166,6 +214,9 @@ def main(argv: list[str] | None = None) -> int:
         out_dir=args.out,
         epochs=args.epochs,
         learning_rate=args.lr,
+        validation_ratio=args.validation_ratio,
+        early_stopping_patience=args.early_stopping_patience,
+        early_stopping_threshold=args.early_stopping_threshold,
     )
     train(cfg)
     return 0

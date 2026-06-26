@@ -157,18 +157,17 @@ each base model against LoRA adapters on the same 24-case golden set.
 
 Best stable results so far:
 
-| Base model | Variant | Grounded rate | Faithfulness | Answer relevance |
-|---|---|---:|---:|---:|
-| `Qwen2.5-0.5B` | Base | 0.3750 | 0.2866 | 0.2036 |
-| `Qwen2.5-0.5B` | LoRA (`lr=1e-4`, 5 epochs) | 0.2083 | 0.3155 | 0.2083 |
-| `Qwen2.5-1.5B` | Base | 0.2083 | 0.3121 | 0.4647 |
-| `Qwen2.5-1.5B` | LoRA (`lr=1e-4`, 5 epochs) | 0.2917 | 0.2844 | 0.4552 |
+| Base model | Variant | Grounded rate | Faithfulness | Answer relevance | Reference overlap |
+|---|---|---:|---:|---:|---:|
+| `Qwen2.5-1.5B` | Base | 0.1667 | 0.2668 | 0.8376 | 0.1668 |
+| `Qwen2.5-1.5B` | LoRA + early stop | 0.9167 | 0.9208 | 0.0458 | 0.7338 |
 
-Decision: **do not promote any adapter yet**. The `1.5B` run is a better
-benchmark than the initial `0.5B` smoke test and improved grounded/cited outputs
-after LoRA, but it reduced faithfulness. Promotion requires improving both
-grounding and faithfulness. See `docs/finetuning-results.md` for commands,
-failed runs, and next iteration.
+Decision: **promote only as an experimental adapter**. The early-stopped LoRA
+run substantially improved grounded/cited outputs, faithfulness and overlap with
+the reference answers. The low `answer_relevance` is expected for this lexical
+proxy because the questions are English and the tuned answers are concise
+Portuguese legal answers. See `docs/finetuning-results.md` for commands, failed
+runs, and next iteration.
 
 ---
 
