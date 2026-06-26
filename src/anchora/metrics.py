@@ -76,3 +76,22 @@ def context_precision(retrieved_docs: list[str], expected_doc: str) -> float:
 def context_recall(retrieved_docs: list[str], expected_doc: str) -> float:
     """1.0 if the expected document was retrieved at all, else 0.0."""
     return 1.0 if expected_doc in retrieved_docs else 0.0
+
+
+_CITATION_INDEX_RE = re.compile(r"\[(\d+)\]")
+
+
+def citation_correct(answer: str, retrieved_docs: list[str], expected_doc: str) -> float:
+    """Whether the answer cites the *right* document, not just any bracket.
+
+    Resolves each ``[n]`` marker to the n-th retrieved chunk and returns 1.0 if at
+    least one cited index points at ``expected_doc``. This is the honest grounding
+    signal: ``guardrails.validate_output`` only checks that a bracket is present,
+    so a model that learns to always append ``[1]`` scores "grounded" for free —
+    this metric does not reward that.
+    """
+    for marker in _CITATION_INDEX_RE.findall(answer):
+        index = int(marker)
+        if 1 <= index <= len(retrieved_docs) and retrieved_docs[index - 1] == expected_doc:
+            return 1.0
+    return 0.0

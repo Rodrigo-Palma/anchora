@@ -57,3 +57,14 @@ def test_redact_pii() -> None:
     assert "joao@example.com" not in redacted
     assert "[REDACTED_CPF]" in redacted
     assert "[REDACTED_EMAIL]" in redacted
+
+
+def test_is_abstention_english_and_portuguese() -> None:
+    from anchora.guardrails import is_abstention
+
+    assert is_abstention("I could not find this information in the provided documents.")
+    assert is_abstention("Nenhum dado foi fornecido para este pedido.")
+    assert is_abstention("Não há uma data específica mencionada no texto.")
+    # a real factual answer must not be mistaken for a refusal
+    assert not is_abstention("15 dias úteis. [1]")
+    assert not is_abstention("30 dias contados da publicação. [2]")

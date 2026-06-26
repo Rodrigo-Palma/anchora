@@ -17,6 +17,20 @@ from dataclasses import dataclass
 _CITATION_RE = re.compile(r"\[\d+\]")
 _ABSTENTION = "could not find"
 
+# Conservative Portuguese refusal markers. The adapter sometimes declines in
+# Portuguese instead of emitting the canonical English sentence, and exact-string
+# matching scored those real refusals as failures. These phrasings are explicit
+# enough not to collide with a factual legal answer. The proper long-term fix is
+# to constrain the model to the canonical sentence — this just stops the metric
+# from under-counting the obvious cases meanwhile.
+_PT_ABSTENTION = (
+    "nenhum dado foi fornecido",
+    "não há uma data específica",
+    "não há informações",
+    "não foi possível encontrar",
+    "não consta",
+)
+
 
 @dataclass
 class GuardrailResult:
@@ -24,11 +38,19 @@ class GuardrailResult:
     reason: str
 
 
+def is_abstention(answer: str) -> bool:
+    """True if the answer explicitly declines to answer (English or Portuguese)."""
+    lowered = answer.lower()
+    if _ABSTENTION in lowered:
+        return True
+    return any(marker in lowered for marker in _PT_ABSTENTION)
+
+
 def validate_output(answer: str) -> GuardrailResult:
     """Pass if the answer cites at least one source or explicitly abstains."""
     if _CITATION_RE.search(answer):
         return GuardrailResult(True, "cited")
-    if _ABSTENTION in answer.lower():
+    if is_abstention(answer):
         return GuardrailResult(True, "abstained")
     return GuardrailResult(False, "ungrounded: no citation and no abstention")
 

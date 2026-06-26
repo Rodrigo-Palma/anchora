@@ -34,7 +34,7 @@ from pathlib import Path
 from typing import Any
 
 from anchora import metrics
-from anchora.guardrails import _ABSTENTION, validate_output
+from anchora.guardrails import is_abstention, validate_output
 from anchora.ingest import ingest_dir
 from anchora.llm import _PROMPT, build_context
 from anchora.rag import retrieve
@@ -69,6 +69,7 @@ class GenerationScore:
     answerable: bool
     answer: str
     grounded: bool
+    citation_correct: float
     abstained: bool
     faithfulness: float
     answer_relevance: float
@@ -95,6 +96,11 @@ class GenerationReport:
     def grounded_rate(self) -> float:
         """Share of *answerable* cases that cited a source (the RAG requirement)."""
         return _mean(1.0 if s.grounded else 0.0 for s in self._answerable)
+
+    @property
+    def citation_accuracy(self) -> float:
+        """Share of *answerable* cases that cited the RIGHT document, not any bracket."""
+        return _mean(s.citation_correct for s in self._answerable)
 
     @property
     def abstention_rate(self) -> float:
@@ -125,6 +131,7 @@ class GenerationReport:
             "n_answerable": len(self._answerable),
             "n_unanswerable": len(self._unanswerable),
             "grounded_rate": self.grounded_rate,
+            "citation_accuracy": self.citation_accuracy,
             "abstention_rate": self.abstention_rate,
             "faithfulness": self.mean_faithfulness,
             "answer_relevance": self.mean_answer_relevance,
@@ -189,6 +196,7 @@ def evaluate(
         answer = _generate(
             tokenizer, model, prompt, max_new_tokens=max_new_tokens, max_length=max_length
         )
+        retrieved_docs = [chunk.doc_id for chunk in chunks]
         scores.append(
             GenerationScore(
                 case_id=case["id"],
@@ -196,7 +204,10 @@ def evaluate(
                 answerable=answerable,
                 answer=answer,
                 grounded=validate_output(answer).ok,
-                abstained=_ABSTENTION in answer.lower(),
+                citation_correct=metrics.citation_correct(
+                    answer, retrieved_docs, case["expected_doc"]
+                ),
+                abstained=is_abstention(answer),
                 faithfulness=metrics.faithfulness(answer, context),
                 answer_relevance=metrics.answer_relevance(answer, case["question"]),
                 reference_overlap=metrics.answer_relevance(answer, case["reference_answer"]),
