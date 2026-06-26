@@ -37,12 +37,16 @@ _PROVIDER = "hash"
 _REFUSAL = "I could not find this information in the provided documents."
 
 
-def build_examples(k: int = 4, *, abstention: bool = True) -> list[dict[str, str]]:
+def build_examples(
+    k: int = 4, *, abstention: bool = True, max_abstention: int | None = None
+) -> list[dict[str, str]]:
     """Return instruction examples: one per golden case, plus abstention cases.
 
     Answerable cases teach "answer from context and cite ``[n]``"; the optional
     abstention cases teach "refuse when the answer is not in context", so the two
     behaviors are balanced instead of the model learning to always answer.
+    ``max_abstention`` caps how many abstention examples are included, to tune the
+    answer/abstain ratio (too many makes the model over-cautious on real answers).
     """
     store = ingest_dir(_CORPUS_DIR, provider=_PROVIDER)
     examples: list[dict[str, str]] = []
@@ -61,7 +65,7 @@ def build_examples(k: int = 4, *, abstention: bool = True) -> list[dict[str, str
             }
         )
     if abstention:
-        for case in _load_abstention():
+        for case in _load_abstention()[:max_abstention]:
             chunks = retrieve(store, case["question"], k=k, provider=_PROVIDER)
             prompt = _PROMPT.format(context=build_context(chunks), question=case["question"])
             examples.append(
@@ -107,10 +111,18 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="Exclude the out-of-corpus abstention examples (answerable-only dataset).",
     )
+    parser.add_argument(
+        "--max-abstention",
+        type=int,
+        default=None,
+        help="Cap the number of abstention examples (tune the answer/abstain ratio).",
+    )
     args = parser.parse_args(argv)
 
-    examples = build_examples(k=args.k, abstention=not args.no_abstention)
-    n_abstention = 0 if args.no_abstention else len(_load_abstention())
+    examples = build_examples(
+        k=args.k, abstention=not args.no_abstention, max_abstention=args.max_abstention
+    )
+    n_abstention = 0 if args.no_abstention else len(_load_abstention()[: args.max_abstention])
     write_jsonl(examples, args.out)
     print(
         f"Wrote {len(examples)} examples to {args.out} "

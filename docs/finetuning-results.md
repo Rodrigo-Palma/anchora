@@ -384,6 +384,35 @@ The net, under metrics that measure what they claim to: the abstention-trained
 adapter beats base+few-shot on **both** honest grounding (0.64 vs 0.50) **and**
 abstention (0.83 vs 0.17). That is the defensible v0.3 result.
 
+### Tuning the abstention ratio — 5 beats 10
+
+The 10/34 (~29%) abstention mix bought refusal at a real cost to answer quality.
+So I swept the ratio: same recipe, but 5 abstention examples (`--max-abstention 5`,
+17%) instead of 10. Scored on the holdout with the honest metrics:
+
+| Adapter | Citation-correct ↑ | Faithfulness ↑ | Ref. overlap ↑ | Abstention (PT) ↑ |
+|---|---:|---:|---:|---:|
+| LoRA (0 abstention)    | 0.773 | **0.789** | **0.519** | 0.167 |
+| **LoRA + 5 abstention** | **0.818** | 0.726 | 0.457 | **0.833** |
+| LoRA + 10 abstention   | 0.636 | 0.658 | 0.394 | 0.833 |
+
+**Five is the sweet spot, and it dominates ten on every axis.** Five abstention
+examples deliver the *full* abstention gain (0.833 — same as ten) while
+**improving** citation accuracy over even the answerable-only adapter (0.818 vs
+0.773) and recovering most of the faithfulness ten had thrown away. Ten examples
+over-taught caution: the model hedged on answerable questions too, dragging
+citation accuracy down to 0.636.
+
+The residual cost vs. the 0-abstention adapter is small (faithfulness 0.789 →
+0.726, overlap 0.519 → 0.457) and clearly worth it: you trade ~6 points of answer
+overlap for a +0.67 jump in knowing when to refuse. **`LoRA + 5 abstention` is the
+promotion candidate** — `data/finetune/instructions-abstention5.jsonl`,
+`artifacts/lora-anchora-qwen15b-abstention5-lr1e4-e30`.
+
+Lesson worth keeping: the fix (teach abstention) and its dosage (how much) are two
+separate decisions. The first needs a held-out eval to even see; the second needs
+a sweep. Neither is visible from a single train==test number.
+
 ## Next Iteration
 
 Reordered — a defensible eval comes before a bigger model. Item 1 is done (see
@@ -398,10 +427,12 @@ the holdout results above); the failure it surfaced sets the new top priority:
    Real citation accuracy is 0.64–0.77 (not the 0.86 bracket-presence number);
    real abstention after training is 0.83 (not 0.50). The adapter still wins on
    both honest metrics.
-4. **Tune the abstention ratio** (≈5/29 vs the current 10/34) to recover the
-   faithfulness/citation precision the abstention training cost.
+4. ✅ **Tune the abstention ratio** — done. 5/29 (17%) dominates 10/34: full
+   abstention (0.833) with better citation accuracy (0.818) and most faithfulness
+   recovered. `LoRA + 5 abstention` is the promotion candidate.
 5. Only then scale training data (200–500 synthetic, source-grounded records),
-   keeping the holdout strictly separate.
+   keeping the holdout strictly separate — and re-sweep the abstention ratio at
+   the new scale.
 6. A promotion rule (already encoded in `registry.py`): promote only if the
    holdout metrics improve without answer drift **and** abstention does not
    regress.
