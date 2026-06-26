@@ -1,0 +1,204 @@
+{
+  "description": "Held-out evaluation set for anchora — questions the LoRA adapter was NOT trained on. Same corpus and language convention as golden.json (English questions, Portuguese corpus and reference answers), but every case asks about a DIFFERENT fact, so it measures generalization rather than memorization. Includes out-of-corpus cases (answerable=false) whose correct behavior is to abstain with the exact refusal sentence. Never feed this file to build_finetune_dataset.py.",
+  "version": "1.0",
+  "split": "holdout",
+  "abstention_sentence": "I could not find this information in the provided documents.",
+  "cases": [
+    {
+      "id": "ho-lai-regra",
+      "question": "What is the general rule regarding publicity versus secrecy of public information?",
+      "expected_doc": "lai.md",
+      "answerable": true,
+      "reference_answer": "A regra geral é a publicidade; o sigilo é a exceção."
+    },
+    {
+      "id": "ho-lai-privacidade",
+      "question": "For how many years is access to personal information about privacy and intimacy restricted?",
+      "expected_doc": "lai.md",
+      "answerable": true,
+      "reference_answer": "100 anos, independentemente de classificação."
+    },
+    {
+      "id": "ho-8112-exercicio",
+      "question": "How many days does a civil servant have to enter into exercise after taking office?",
+      "expected_doc": "lei-8112.md",
+      "answerable": true,
+      "reference_answer": "15 dias contados da data da posse."
+    },
+    {
+      "id": "ho-8112-suspensao",
+      "question": "What is the maximum length of a suspension penalty for a federal civil servant?",
+      "expected_doc": "lei-8112.md",
+      "answerable": true,
+      "reference_answer": "Não pode exceder 90 dias."
+    },
+    {
+      "id": "ho-8112-ferias",
+      "question": "How many vacation days per year is a federal civil servant entitled to?",
+      "expected_doc": "lei-8112.md",
+      "answerable": true,
+      "reference_answer": "30 dias por ano, podendo ser parcelados em até três períodos."
+    },
+    {
+      "id": "ho-defensoria-garantias",
+      "question": "What guarantees do Public Defenders enjoy in their career?",
+      "expected_doc": "defensoria-publica.md",
+      "answerable": true,
+      "reference_answer": "Independência funcional, inamovibilidade, irredutibilidade de vencimentos e estabilidade."
+    },
+    {
+      "id": "ho-defensoria-natureza",
+      "question": "What kind of institution is the Public Defender's Office under the Constitution?",
+      "expected_doc": "defensoria-publica.md",
+      "answerable": true,
+      "reference_answer": "Instituição permanente, essencial à função jurisdicional do Estado."
+    },
+    {
+      "id": "ho-lgpd-objetivo",
+      "question": "What is the stated objective of the LGPD?",
+      "expected_doc": "lgpd.md",
+      "answerable": true,
+      "reference_answer": "Proteger os direitos fundamentais de liberdade e de privacidade."
+    },
+    {
+      "id": "ho-lgpd-encarregado",
+      "question": "What is the role of the data protection officer (encarregado/DPO) under the LGPD?",
+      "expected_doc": "lgpd.md",
+      "answerable": true,
+      "reference_answer": "É o canal de comunicação entre o controlador, os titulares e a ANPD."
+    },
+    {
+      "id": "ho-lgpd-bases",
+      "question": "Name some of the legal bases that authorize the processing of personal data under the LGPD.",
+      "expected_doc": "lgpd.md",
+      "answerable": true,
+      "reference_answer": "Consentimento do titular, cumprimento de obrigação legal, execução de políticas públicas, exercício regular de direitos e legítimo interesse do controlador."
+    },
+    {
+      "id": "ho-cpc-apelacao",
+      "question": "What is the deadline to file an appeal (apelação) under the new CPC?",
+      "expected_doc": "cpc-prazos.md",
+      "answerable": true,
+      "reference_answer": "15 dias úteis."
+    },
+    {
+      "id": "ho-cpc-embargos",
+      "question": "What is the deadline for motions for clarification (embargos de declaração)?",
+      "expected_doc": "cpc-prazos.md",
+      "answerable": true,
+      "reference_answer": "5 dias úteis."
+    },
+    {
+      "id": "ho-cpc-recesso",
+      "question": "During which period are procedural deadlines suspended for the forensic recess?",
+      "expected_doc": "cpc-prazos.md",
+      "answerable": true,
+      "reference_answer": "Entre 20 de dezembro e 20 de janeiro."
+    },
+    {
+      "id": "ho-licitacao-substituiu",
+      "question": "Which previous law did Law 14.133/2021 replace?",
+      "expected_doc": "licitacoes.md",
+      "answerable": true,
+      "reference_answer": "A Lei nº 8.666/1993."
+    },
+    {
+      "id": "ho-licitacao-habilitacao",
+      "question": "When does the qualification (habilitação) phase generally occur under the new Procurement Law?",
+      "expected_doc": "licitacoes.md",
+      "answerable": true,
+      "reference_answer": "Em regra, após o julgamento das propostas, invertendo a ordem tradicional."
+    },
+    {
+      "id": "ho-licitacao-direta",
+      "question": "Through which procedures may direct contracting occur under the Procurement Law?",
+      "expected_doc": "licitacoes.md",
+      "answerable": true,
+      "reference_answer": "Por dispensa ou inexigibilidade de licitação, nas hipóteses previstas em lei."
+    },
+    {
+      "id": "ho-procadm-destino-recurso",
+      "question": "To which authority is the administrative appeal addressed under Law 9.784?",
+      "expected_doc": "processo-administrativo.md",
+      "answerable": true,
+      "reference_answer": "À autoridade que proferiu a decisão, que poderá reconsiderar ou encaminhar à autoridade superior."
+    },
+    {
+      "id": "ho-procadm-lei",
+      "question": "Which law regulates the administrative process within the federal public administration?",
+      "expected_doc": "processo-administrativo.md",
+      "answerable": true,
+      "reference_answer": "A Lei nº 9.784, de 29 de janeiro de 1999."
+    },
+    {
+      "id": "ho-gratuidade-recurso",
+      "question": "Which appeal lies against a decision that denies the free justice benefit?",
+      "expected_doc": "gratuidade-justica.md",
+      "answerable": true,
+      "reference_answer": "Agravo de instrumento."
+    },
+    {
+      "id": "ho-gratuidade-pessoa-juridica",
+      "question": "Can a legal entity (pessoa jurídica) be granted the free justice benefit?",
+      "expected_doc": "gratuidade-justica.md",
+      "answerable": true,
+      "reference_answer": "Sim, pessoa jurídica brasileira ou estrangeira com insuficiência de recursos."
+    },
+    {
+      "id": "ho-lai-custo",
+      "question": "Is access to public information free of charge under the LAI?",
+      "expected_doc": "lai.md",
+      "answerable": true,
+      "reference_answer": "Sim, salvo o custo de reprodução de documentos."
+    },
+    {
+      "id": "ho-8112-jornada",
+      "question": "What is the regular working schedule of a federal civil servant?",
+      "expected_doc": "lei-8112.md",
+      "answerable": true,
+      "reference_answer": "Até 8 horas diárias e 40 horas semanais."
+    },
+    {
+      "id": "ho-ooc-homicidio",
+      "question": "What is the statute of limitations for criminal prosecution of homicide in Brazil?",
+      "expected_doc": "NONE",
+      "answerable": false,
+      "reference_answer": "I could not find this information in the provided documents."
+    },
+    {
+      "id": "ho-ooc-salario-minimo",
+      "question": "What is the Brazilian minimum wage for the year 2024?",
+      "expected_doc": "NONE",
+      "answerable": false,
+      "reference_answer": "I could not find this information in the provided documents."
+    },
+    {
+      "id": "ho-ooc-senadores",
+      "question": "How many senators represent each Brazilian state in the Federal Senate?",
+      "expected_doc": "NONE",
+      "answerable": false,
+      "reference_answer": "I could not find this information in the provided documents."
+    },
+    {
+      "id": "ho-ooc-imposto-renda",
+      "question": "What is the deadline to file the annual individual income tax return in Brazil?",
+      "expected_doc": "NONE",
+      "answerable": false,
+      "reference_answer": "I could not find this information in the provided documents."
+    },
+    {
+      "id": "ho-ooc-cnh",
+      "question": "How many points on a driver's license lead to its suspension in Brazil?",
+      "expected_doc": "NONE",
+      "answerable": false,
+      "reference_answer": "I could not find this information in the provided documents."
+    },
+    {
+      "id": "ho-ooc-marca",
+      "question": "How long does trademark registration protection last under Brazilian industrial property law?",
+      "expected_doc": "NONE",
+      "answerable": false,
+      "reference_answer": "I could not find this information in the provided documents."
+    }
+  ]
+}
