@@ -151,21 +151,24 @@ The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0**
 ### Fine-tuning comparison
 
 LoRA fine-tuning is wired and measured with `scripts/finetune_lora.py` and
-`scripts/evaluate_finetune.py`. The first local smoke benchmark used
-`Qwen/Qwen2.5-0.5B-Instruct` on Apple Silicon MPS and compared the base model
-against LoRA adapters on the same 24-case golden set.
+`scripts/evaluate_finetune.py`. Local benchmarks were run on Apple Silicon MPS
+with `Qwen/Qwen2.5-0.5B-Instruct` and `Qwen/Qwen2.5-1.5B-Instruct`, comparing
+each base model against LoRA adapters on the same 24-case golden set.
 
-Best stable result so far:
+Best stable results so far:
 
-| Model | Grounded rate | Faithfulness | Answer relevance |
-|---|---:|---:|---:|
-| Base | 0.3750 | 0.2866 | 0.2036 |
-| LoRA (`lr=1e-4`, 5 epochs) | 0.2083 | 0.3155 | 0.2083 |
+| Base model | Variant | Grounded rate | Faithfulness | Answer relevance |
+|---|---|---:|---:|---:|
+| `Qwen2.5-0.5B` | Base | 0.3750 | 0.2866 | 0.2036 |
+| `Qwen2.5-0.5B` | LoRA (`lr=1e-4`, 5 epochs) | 0.2083 | 0.3155 | 0.2083 |
+| `Qwen2.5-1.5B` | Base | 0.2083 | 0.3121 | 0.4647 |
+| `Qwen2.5-1.5B` | LoRA (`lr=1e-4`, 5 epochs) | 0.2917 | 0.2844 | 0.4552 |
 
-Decision: **do not promote this adapter yet**. It improved faithfulness slightly
-but reduced grounded/cited outputs, which is the production-critical behavior
-for a RAG assistant. See `docs/finetuning-results.md` for commands, failed runs,
-and next iteration.
+Decision: **do not promote any adapter yet**. The `1.5B` run is a better
+benchmark than the initial `0.5B` smoke test and improved grounded/cited outputs
+after LoRA, but it reduced faithfulness. Promotion requires improving both
+grounding and faithfulness. See `docs/finetuning-results.md` for commands,
+failed runs, and next iteration.
 
 ---
 

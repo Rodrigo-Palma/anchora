@@ -8,7 +8,7 @@ v0.3 claim measurable: **base model vs. tuned adapter on the same golden set**.
 
 | Item | Value |
 |---|---|
-| Base model | `Qwen/Qwen2.5-0.5B-Instruct` |
+| Base models | `Qwen/Qwen2.5-0.5B-Instruct`, `Qwen/Qwen2.5-1.5B-Instruct` |
 | Hardware | Apple Silicon MPS |
 | Dataset | `data/finetune/instructions.jsonl` |
 | Golden set | 24 questions over 8 Brazilian legal/administrative documents |
@@ -98,15 +98,64 @@ Result:
 Interpretation: this was stable and improved faithfulness slightly, but still
 reduced grounded/cited outputs. It should **not** be promoted yet.
 
+### Experiment D — larger base model, completion-only loss
+
+Command:
+
+```bash
+uv run python scripts/finetune_lora.py \
+  --base Qwen/Qwen2.5-1.5B-Instruct \
+  --data data/finetune/instructions.jsonl \
+  --out artifacts/lora-anchora-qwen15b-completion-lr1e4-e5 \
+  --epochs 5 \
+  --lr 1e-4
+```
+
+Result:
+
+| Model | Grounded rate | Faithfulness | Answer relevance |
+|---|---:|---:|---:|
+| Base | 0.2083 | 0.3121 | 0.4647 |
+| LoRA | 0.2917 | 0.2844 | 0.4552 |
+
+Interpretation: the larger base model is a better benchmark than the `0.5B`
+smoke test. The LoRA adapter improved the production-critical citation/grounding
+rate, but it reduced faithfulness. This is useful evidence, but it is still not
+a promotion candidate.
+
+### Experiment E — larger base model, lower LR
+
+Command:
+
+```bash
+uv run python scripts/finetune_lora.py \
+  --base Qwen/Qwen2.5-1.5B-Instruct \
+  --data data/finetune/instructions.jsonl \
+  --out artifacts/lora-anchora-qwen15b-completion-lr5e5-e5 \
+  --epochs 5 \
+  --lr 5e-5
+```
+
+Result:
+
+| Model | Grounded rate | Faithfulness | Answer relevance |
+|---|---:|---:|---:|
+| Base | 0.2083 | 0.3121 | 0.4647 |
+| LoRA | 0.2083 | 0.2726 | 0.4364 |
+
+Interpretation: the lower learning rate was stable, but it did not improve
+grounding and reduced both faithfulness and answer relevance. It should not be
+promoted.
+
 ## Evaluation Command
 
 The comparison was generated with:
 
 ```bash
 uv run python scripts/evaluate_finetune.py \
-  --base Qwen/Qwen2.5-0.5B-Instruct \
-  --adapter artifacts/lora-anchora-qwen05b-completion-lr1e4-e5 \
-  --out artifacts/finetune-comparison-qwen05b-completion-lr1e4-e5.json \
+  --base Qwen/Qwen2.5-1.5B-Instruct \
+  --adapter artifacts/lora-anchora-qwen15b-completion-lr1e4-e5 \
+  --out artifacts/finetune-comparison-qwen15b-completion-lr1e4-e5.json \
   --max-new-tokens 96
 ```
 
@@ -119,14 +168,15 @@ Do **not** promote any adapter from these first experiments. The honest v0.3
 result is:
 
 > LoRA is wired end-to-end and measured. On a tiny 0.5B local model with only 24
-> training examples, it improves faithfulness slightly but does not yet improve
-> the production-critical grounding/citation behavior.
+> training examples, it improves faithfulness slightly but hurts grounding. On a
+> larger 1.5B local model, it improves grounding but hurts faithfulness. No
+> adapter improves both metrics yet, so none should be promoted.
 
 ## Next Iteration
 
 The next run should use:
 
-1. A larger local model (`Qwen2.5-1.5B` or `Qwen2.5-3B`) once cached locally.
+1. A larger local model (`Qwen2.5-3B`) once cached locally.
 2. More training examples (at least 200-500 synthetic, source-grounded records).
 3. A stricter response template: short answer first, mandatory citation last.
 4. A validation split so the adapter is not judged only on memorized golden cases.
