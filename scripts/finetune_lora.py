@@ -23,6 +23,7 @@ from __future__ import annotations
 import argparse
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 
 @dataclass
@@ -41,11 +42,42 @@ class TrainConfig:
     seed: int = 42
 
 
-def _format_example(example: dict[str, str]) -> str:
-    """Render one record into a single training string (instruction + answer)."""
-    instruction = example["instruction"]
-    output = example["output"]
-    return f"{instruction} {output}"
+def _tokenize_completion(
+    record: dict[str, str], tokenizer: Any, max_seq_len: int
+) -> dict[str, list[int]]:
+    """Tokenize prompt + answer while masking the prompt from the loss."""
+    prompt = record["instruction"]
+    completion = f" {record['output']}{tokenizer.eos_token or ''}"
+    prompt_ids = tokenizer(prompt, add_special_tokens=True)["input_ids"]
+    completion_ids = tokenizer(completion, add_special_tokens=False)["input_ids"]
+    input_ids = (prompt_ids + completion_ids)[:max_seq_len]
+    prompt_len = min(len(prompt_ids), len(input_ids))
+    labels = [-100] * prompt_len + input_ids[prompt_len:]
+    return {
+        "input_ids": input_ids,
+        "attention_mask": [1] * len(input_ids),
+        "labels": labels,
+    }
+
+
+class CompletionCollator:
+    """Pad completion-only causal-LM records, keeping prompt labels masked."""
+
+    def __init__(self, tokenizer: Any) -> None:
+        self.tokenizer = tokenizer
+
+    def __call__(self, features: list[dict[str, list[int]]]) -> dict[str, Any]:
+        import torch
+
+        max_len = max(len(feature["input_ids"]) for feature in features)
+        pad_id = self.tokenizer.pad_token_id
+        batch: dict[str, list[list[int]]] = {"input_ids": [], "attention_mask": [], "labels": []}
+        for feature in features:
+            pad = max_len - len(feature["input_ids"])
+            batch["input_ids"].append(feature["input_ids"] + [pad_id] * pad)
+            batch["attention_mask"].append(feature["attention_mask"] + [0] * pad)
+            batch["labels"].append(feature["labels"] + [-100] * pad)
+        return {key: torch.tensor(value, dtype=torch.long) for key, value in batch.items()}
 
 
 def train(cfg: TrainConfig) -> Path:
@@ -57,7 +89,6 @@ def train(cfg: TrainConfig) -> Path:
     from transformers import (
         AutoModelForCausalLM,
         AutoTokenizer,
-        DataCollatorForLanguageModeling,
         Trainer,
         TrainingArguments,
         set_seed,
@@ -76,7 +107,7 @@ def train(cfg: TrainConfig) -> Path:
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
 
-    model = AutoModelForCausalLM.from_pretrained(cfg.base_model)
+    model: Any = AutoModelForCausalLM.from_pretrained(cfg.base_model)
     lora = LoraConfig(
         r=cfg.lora_r,
         lora_alpha=cfg.lora_alpha,
@@ -89,9 +120,8 @@ def train(cfg: TrainConfig) -> Path:
 
     dataset = load_dataset("json", data_files=str(cfg.data_path), split="train")
 
-    # Map row-wise so _format_example sees full records.
     tokenized = dataset.map(
-        lambda rec: tokenizer(_format_example(rec), truncation=True, max_length=cfg.max_seq_len),
+        lambda rec: _tokenize_completion(rec, tokenizer, cfg.max_seq_len),
         remove_columns=dataset.column_names,
     )
 
@@ -110,7 +140,7 @@ def train(cfg: TrainConfig) -> Path:
         model=model,
         args=args,
         train_dataset=tokenized,
-        data_collator=DataCollatorForLanguageModeling(tokenizer, mlm=False),
+        data_collator=CompletionCollator(tokenizer),
     )
     trainer.train()
 

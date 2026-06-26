@@ -148,6 +148,25 @@ The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0**
 
 > Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies provide an objective, free floor; the local *judge* remains available for richer analysis.
 
+### Fine-tuning comparison
+
+LoRA fine-tuning is wired and measured with `scripts/finetune_lora.py` and
+`scripts/evaluate_finetune.py`. The first local smoke benchmark used
+`Qwen/Qwen2.5-0.5B-Instruct` on Apple Silicon MPS and compared the base model
+against LoRA adapters on the same 24-case golden set.
+
+Best stable result so far:
+
+| Model | Grounded rate | Faithfulness | Answer relevance |
+|---|---:|---:|---:|
+| Base | 0.3750 | 0.2866 | 0.2036 |
+| LoRA (`lr=1e-4`, 5 epochs) | 0.2083 | 0.3155 | 0.2083 |
+
+Decision: **do not promote this adapter yet**. It improved faithfulness slightly
+but reduced grounded/cited outputs, which is the production-critical behavior
+for a RAG assistant. See `docs/finetuning-results.md` for commands, failed runs,
+and next iteration.
+
 ---
 
 ## Roadmap
@@ -156,7 +175,7 @@ The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0**
 |---|---|
 | **v0.1** | RAG + agent with tools + FastAPI + README/diagram ✅ |
 | **v0.2** | *evals* in CI + guardrails ✅ |
-| **v0.3** | LoRA/QLoRA *fine-tune* + baseline vs. tuned comparison ✅ |
+| **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison measured; adapter not promoted yet ⚠️ |
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
 | **v1.0** | demo + technical post + eval methodology write-up |
 

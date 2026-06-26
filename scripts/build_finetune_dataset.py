@@ -39,15 +39,25 @@ def build_examples(k: int = 4) -> list[dict[str, str]]:
         question = case["question"]
         chunks = retrieve(store, question, k=k, provider=_PROVIDER)
         prompt = _PROMPT.format(context=build_context(chunks), question=question)
+        retrieved_docs = [chunk.doc_id for chunk in chunks]
+        citation = _citation_for_expected_doc(retrieved_docs, case["expected_doc"])
         examples.append(
             {
                 "id": case["id"],
                 "instruction": prompt,
                 "input": "",
-                "output": case["reference_answer"],
+                "output": f"{case['reference_answer']} {citation}",
             }
         )
     return examples
+
+
+def _citation_for_expected_doc(retrieved_docs: list[str], expected_doc: str) -> str:
+    """Return the citation marker for the first retrieved chunk from the expected document."""
+    for idx, doc_id in enumerate(retrieved_docs, start=1):
+        if doc_id == expected_doc:
+            return f"[{idx}]"
+    return "[1]"
 
 
 def write_jsonl(examples: list[dict[str, str]], out: Path) -> None:
