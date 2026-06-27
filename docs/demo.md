@@ -2,7 +2,7 @@
 
 Reproducible end-to-end walkthrough. Everything below runs **offline** (provider
 `hash`, no LLM), so it requires neither Ollama nor a network connection — ideal
-for recording a GIF/asciinema or demonstrating in an interview.
+for recording a GIF/asciinema or a quick walkthrough.
 
 ## 0. Setup
 

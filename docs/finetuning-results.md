@@ -221,9 +221,8 @@ index is the right document — so an adapter that learns to always append a
 bracket scores high "grounding" for free.
 
 This is a valid **smoke test** (the SFT pipeline is correctly wired and the model
-can learn the target format). It is not evidence that the adapter is *better*.
-Calling it that would be the kind of inflated claim a sharp interviewer catches
-in sixty seconds.
+can learn the target format). It is not evidence that the adapter is *better* —
+and reporting it as such would be an unsupported claim.
 
 ### What changed (v0.3.1)
 
@@ -347,12 +346,10 @@ same fair baselines:
   the trade leans a bit far toward caution; the next knob to turn is that ratio,
   not the model size.
 
-Honest one-liner for the v0.3 story: *"My first fine-tune scored 0.92 — on its own
-training set. I built a held-out eval, controlled for prompt format with a
-few-shot baseline, and found the real gain was smaller but genuine — and that the
-adapter never abstained. I fixed that with abstention data; it now refuses half
-the out-of-corpus questions, at a measured cost to answer precision I can show you
-in a table."*
+In one sentence: the first 0.92 was measured on the training set; a held-out eval
+and a few-shot baseline showed the real gain was smaller but genuine, exposed that
+the adapter never abstained, and the abstention fix traded a measured amount of
+answer precision for refusing half the out-of-corpus questions.
 
 ### Measuring the right thing (rec #3) — two metrics that move in opposite directions
 
