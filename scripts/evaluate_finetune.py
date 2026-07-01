@@ -145,6 +145,33 @@ def load_cases(path: Path) -> list[dict[str, Any]]:
     return list(data["cases"])
 
 
+def score_case(answer: str, case: dict[str, Any], store: Any) -> GenerationScore:
+    """Score a single generated ``answer`` against its retrieved context.
+
+    This is the single scoring authority for both paths: the GPU generation loop
+    in :func:`evaluate` and the offline frozen re-scoring in
+    ``scripts/score_generations.py``. Retrieval uses the deterministic ``hash``
+    provider, so given the same ``answer`` string the score is fully reproducible
+    with no model and no network.
+    """
+    answerable = bool(case.get("answerable", True))
+    chunks = retrieve(store, case["question"], k=4, provider=_PROVIDER)
+    context = build_context(chunks)
+    retrieved_docs = [chunk.doc_id for chunk in chunks]
+    return GenerationScore(
+        case_id=case["id"],
+        expected_doc=case["expected_doc"],
+        answerable=answerable,
+        answer=answer,
+        grounded=validate_output(answer).ok,
+        citation_correct=metrics.citation_correct(answer, retrieved_docs, case["expected_doc"]),
+        abstained=is_abstention(answer),
+        faithfulness=metrics.faithfulness(answer, context),
+        answer_relevance=metrics.answer_relevance(answer, case["question"]),
+        reference_overlap=metrics.answer_relevance(answer, case["reference_answer"]),
+    )
+
+
 def _citation_for_expected_doc(retrieved_docs: list[str], expected_doc: str) -> str:
     """Citation marker for the first retrieved chunk from the expected document."""
     for idx, doc_id in enumerate(retrieved_docs, start=1):
@@ -189,30 +216,13 @@ def evaluate(
 
     scores: list[GenerationScore] = []
     for case in cases:
-        answerable = bool(case.get("answerable", True))
         chunks = retrieve(store, case["question"], k=4, provider=_PROVIDER)
         context = build_context(chunks)
         prompt = prefix + _PROMPT.format(context=context, question=case["question"])
         answer = _generate(
             tokenizer, model, prompt, max_new_tokens=max_new_tokens, max_length=max_length
         )
-        retrieved_docs = [chunk.doc_id for chunk in chunks]
-        scores.append(
-            GenerationScore(
-                case_id=case["id"],
-                expected_doc=case["expected_doc"],
-                answerable=answerable,
-                answer=answer,
-                grounded=validate_output(answer).ok,
-                citation_correct=metrics.citation_correct(
-                    answer, retrieved_docs, case["expected_doc"]
-                ),
-                abstained=is_abstention(answer),
-                faithfulness=metrics.faithfulness(answer, context),
-                answer_relevance=metrics.answer_relevance(answer, case["question"]),
-                reference_overlap=metrics.answer_relevance(answer, case["reference_answer"]),
-            )
-        )
+        scores.append(score_case(answer, case, store))
     return GenerationReport(
         name=name,
         base_model=base_model,

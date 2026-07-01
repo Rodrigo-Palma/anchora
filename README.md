@@ -187,12 +187,22 @@ axes — the win is smaller than 0.92, but real:
 | base + few-shot | 0.500 | 0.167 | 0.197 |
 | **LoRA + 5 abstention** | **0.818** | **0.833** | 0.726 |
 
+These numbers are **reproduced by CI without a GPU**. Generation needs Apple
+Silicon, but the real decoded outputs are frozen in
+`data/eval/holdout-generations.json` and re-scored deterministically through the
+same scorer (`retrieval = hash`), so a mismatch fails the build:
+
+```bash
+# Reproduce (no GPU, no network): re-score frozen generations + replay the gate
+make eval-honest
+```
+
 The holdout also exposed a failure the leaked eval never could: the first adapter
 **never abstained** — on out-of-corpus questions it fabricated confident answers
 with fake citations. Adding 5 abstention examples fixed it (0.00 → 0.83) at a
 small, measured cost to answer precision; a sweep showed 5 examples dominate 10 on
 every axis. A promotion gate wired to these honest metrics
-(`register_finetune.py` + `registry.regressions`) then **auto-rejected** the
+(`gate_promotion.py` + `registry.regressions`) then **auto-rejected** the
 over-cautious 10-example variant, which regressed citation accuracy 0.818 → 0.636.
 
 Full arc — every failed run, the leak, the fix, the ratio sweep, the gate — in

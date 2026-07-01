@@ -430,6 +430,32 @@ written against metrics that measure real behavior on unseen data. Final prod:
 `v0.3-lora5`. (The registry file lives under `artifacts/` and is not tracked; the
 capability is the code and the gate, not the JSON.)
 
+### Frozen so it runs in CI — no GPU, no network
+
+The generation runs above need a GPU (Apple MPS), and the raw comparison JSONs
+under `artifacts/` are not tracked — so from a clean checkout none of these
+numbers could be reproduced. To close that gap without re-generating, the real
+decoded outputs are frozen per arm in `data/eval/holdout-generations.json` (actual
+model outputs, not invented numbers) and re-scored deterministically:
+
+* `scripts/evaluate_finetune.py` was refactored so its GPU generation loop and the
+  offline re-scoring share one scorer, `score_case(answer, case, store)`. Same
+  code scores a freshly generated answer and a frozen one.
+* `scripts/score_generations.py --check` re-scores every frozen arm through
+  `score_case` (retrieval = deterministic `hash`) and fails if any metric drifts
+  from the numbers above beyond a small tolerance.
+* `scripts/gate_promotion.py` replays the promotion gate on those re-scored
+  metrics and reproduces the decision: promote `lora0`, promote `lora5`, reject
+  `lora10`.
+
+```bash
+make eval-honest   # score_generations.py --check && gate_promotion.py
+```
+
+`tests/test_frozen_eval.py` runs the same checks in the suite, and CI runs
+`make eval-honest`, so the fine-tuning table is a build-time invariant rather than
+a claim about a run that happened once on my laptop.
+
 ## Next Iteration
 
 Reordered — a defensible eval comes before a bigger model. Item 1 is done (see

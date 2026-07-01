@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install lint fmt fmt-check type test eval check api dataset pipeline clean
+.PHONY: help install lint fmt fmt-check type test eval eval-honest check api dataset pipeline clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -26,7 +26,11 @@ test: ## Run the test suite with coverage
 eval: ## Run the offline eval gate
 	uv run anchora eval
 
-check: lint fmt-check type test eval ## Run the full local CI gate
+eval-honest: ## Re-score frozen held-out generations + replay the promotion gate (no GPU)
+	uv run python scripts/score_generations.py --check
+	uv run python scripts/gate_promotion.py
+
+check: lint fmt-check type test eval eval-honest ## Run the full local CI gate
 
 dataset: ## Build the fine-tune instruction dataset
 	uv run python scripts/build_finetune_dataset.py

@@ -41,6 +41,9 @@ jobs:
       - name: Eval gate (offline, deterministic)
         run: uv run anchora eval
 
+      - name: Honest fine-tune eval (frozen generations + promotion gate, no GPU)
+        run: uv run make eval-honest
+
   terraform:
     runs-on: ubuntu-latest
     defaults:
