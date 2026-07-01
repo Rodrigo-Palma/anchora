@@ -9,7 +9,7 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
 
 ### To do (v1.0)
 - Recorded demo (asciinema/GIF) of the CLI + API flow.
-- Technical post and eval methodology write-up published.
+- Public write-up of the eval methodology.
 
 ## [0.4.0] — 2026-06-24
 

@@ -8,16 +8,24 @@ The domain is Brazilian public law: LAI, Lei 8.112, Defensoria Pública, LGPD, C
 
 ---
 
-## Why this project
+## What makes this more than a RAG demo
 
-It is an end-to-end **AI/ML Engineering** *engineering project*:
+Most RAG demos work on the happy path. The focus here is the opposite: **measuring
+when the system is wrong, and making it abstain instead of bluffing.** The
+engineering follows from that stance:
 
-- **RAG + agent with tools** (not just "chat over a PDF");
-- **production guardrails** (anti-injection, PII redaction, mandatory *grounding*);
-- **automated evaluation in CI** with an objective *gate* (retrieval recall + faithfulness);
-- **LoRA/QLoRA fine-tuning** with a baseline vs. tuned comparison;
-- **ML pipeline** (process → train → evaluate → register) + SageMaker and Terraform scaffolding;
-- **engineering**: `uv`, `ruff`, `mypy --strict`, `pytest` with coverage, Docker, GitHub Actions.
+- **RAG + agent with tools** — retrieval plus `legal_deadline` calculation and
+  `search_documents`, not just "chat over a PDF";
+- **production guardrails** — anti-injection, PII redaction, and a mandatory
+  grounding check that forces a citation `[n]` or an explicit abstention;
+- **honest, reproducible evals in CI** — deterministic lexical proxies gate the
+  build with no model, no network, and no cost;
+- **a fine-tuning study that caught its own leak** — a headline 0.92 that turned
+  out to be measured on the training set, and what the real number was ([below](#fine-tuning-how-i-caught-my-own-eval-grading-its-own-homework));
+- **MLOps** — process → train → evaluate → register, with a promotion gate that
+  auto-rejects regressions, plus SageMaker and Terraform scaffolding;
+- **engineering hygiene** — `uv`, `ruff`, `mypy --strict`, `pytest` with coverage,
+  Docker, GitHub Actions.
 
 Everything runs **offline and for free**: embeddings and generation via Ollama, plus a deterministic `hash` embedding provider so that **tests and CI are reproducible without a model or network**.
 
@@ -148,26 +156,47 @@ The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0**
 
 > Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies provide an objective, free floor; the local *judge* remains available for richer analysis.
 
-### Fine-tuning comparison
+### Fine-tuning: how I caught my own eval grading its own homework
 
-LoRA fine-tuning is wired and measured with `scripts/finetune_lora.py` and
-`scripts/evaluate_finetune.py`. Local benchmarks were run on Apple Silicon MPS
-with `Qwen/Qwen2.5-0.5B-Instruct` and `Qwen/Qwen2.5-1.5B-Instruct`, comparing
-each base model against LoRA adapters on the same 24-case golden set.
+LoRA fine-tuning is wired with `scripts/finetune_lora.py` and
+`scripts/evaluate_finetune.py`, run on Apple Silicon MPS against
+`Qwen/Qwen2.5-1.5B-Instruct`. The first run looked like a triumph:
+**0.92 grounded rate vs. 0.17 for the base model.**
 
-Best stable results so far:
+Then I noticed the training set was built from the same 24-question golden set I
+was scoring on — **train == test.** The 0.92 mostly measured memorization of 24
+answers, not a skill. What I did about it:
 
-| Base model | Variant | Grounded rate | Faithfulness | Answer relevance | Reference overlap |
-|---|---|---:|---:|---:|---:|
-| `Qwen2.5-1.5B` | Base | 0.1667 | 0.2668 | 0.8376 | 0.1668 |
-| `Qwen2.5-1.5B` | LoRA + early stop | 0.9167 | 0.9208 | 0.0458 | 0.7338 |
+1. **Built a disjoint holdout** — 28 brand-new questions over the same corpus
+   (22 answerable, 6 out-of-corpus), asserted disjoint from training in
+   `tests/test_holdout.py`. The adapter never saw them.
+2. **Added a fair few-shot baseline** — the base model given the same `PT + [n]`
+   output contract via few-shot, to separate *learned knowledge* from *learned
+   format*.
+3. **Fixed the metrics** — `grounded_rate` only checked for a `[n]` bracket, so I
+   added `citation_correct` (does the cited index resolve to the *expected*
+   document?); the exact-English abstention check missed Portuguese refusals, so I
+   added PT-aware detection.
 
-Decision: **promote only as an experimental adapter**. The early-stopped LoRA
-run substantially improved grounded/cited outputs, faithfulness and overlap with
-the reference answers. The low `answer_relevance` is expected for this lexical
-proxy because the questions are English and the tuned answers are concise
-Portuguese legal answers. See `docs/finetuning-results.md` for commands, failed
-runs, and next iteration.
+On the holdout, under metrics that measure what they claim, the promotion
+candidate (`LoRA + 5 abstention`) still beats the base+few-shot baseline on both
+axes — the win is smaller than 0.92, but real:
+
+| Row | Citation-correct ↑ | Abstention (PT-aware) ↑ | Faithfulness ↑ |
+|---|---:|---:|---:|
+| base + few-shot | 0.500 | 0.167 | 0.197 |
+| **LoRA + 5 abstention** | **0.818** | **0.833** | 0.726 |
+
+The holdout also exposed a failure the leaked eval never could: the first adapter
+**never abstained** — on out-of-corpus questions it fabricated confident answers
+with fake citations. Adding 5 abstention examples fixed it (0.00 → 0.83) at a
+small, measured cost to answer precision; a sweep showed 5 examples dominate 10 on
+every axis. A promotion gate wired to these honest metrics
+(`register_finetune.py` + `registry.regressions`) then **auto-rejected** the
+over-cautious 10-example variant, which regressed citation accuracy 0.818 → 0.636.
+
+Full arc — every failed run, the leak, the fix, the ratio sweep, the gate — in
+[`docs/finetuning-results.md`](docs/finetuning-results.md).
 
 ---
 
@@ -179,7 +208,7 @@ runs, and next iteration.
 | **v0.2** | *evals* in CI + guardrails ✅ |
 | **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison measured; adapter not promoted yet ⚠️ |
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
-| **v1.0** | demo + technical post + eval methodology write-up |
+| **v1.0** | demo + write-up of the eval methodology |
 
 ---
 
