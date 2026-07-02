@@ -44,6 +44,11 @@ _CORPUS_DIR = _ROOT / "data" / "corpus"
 _GOLDEN_PATH = _ROOT / "data" / "golden" / "golden.json"
 _DEFAULT_OUT = _ROOT / "artifacts" / "finetune-comparison.json"
 _PROVIDER = "hash"
+# The frozen generations in data/eval/ were produced under dense retrieval.
+# Replaying them must pin that mode: scoring resolves [n] citations against the
+# retrieved list, so a different retrieval mode would silently re-grade a past
+# experiment under conditions it never ran in.
+_RETRIEVAL_MODE = "dense"
 
 # Few-shot exemplars are taken ONLY from the training golden set, so evaluating
 # on the holdout stays leak-free. Two answerable cases (distinct documents) plus
@@ -155,7 +160,7 @@ def score_case(answer: str, case: dict[str, Any], store: Any) -> GenerationScore
     with no model and no network.
     """
     answerable = bool(case.get("answerable", True))
-    chunks = retrieve(store, case["question"], k=4, provider=_PROVIDER)
+    chunks = retrieve(store, case["question"], k=4, provider=_PROVIDER, mode=_RETRIEVAL_MODE)
     context = build_context(chunks)
     retrieved_docs = [chunk.doc_id for chunk in chunks]
     return GenerationScore(
@@ -186,7 +191,7 @@ def build_fewshot_prefix(store: Any, *, k: int = 4) -> str:
     blocks: list[str] = []
     for case_id in _FEWSHOT_EXEMPLAR_IDS:
         case = train_cases[case_id]
-        chunks = retrieve(store, case["question"], k=k, provider=_PROVIDER)
+        chunks = retrieve(store, case["question"], k=k, provider=_PROVIDER, mode=_RETRIEVAL_MODE)
         prompt = _PROMPT.format(context=build_context(chunks), question=case["question"])
         citation = _citation_for_expected_doc([c.doc_id for c in chunks], case["expected_doc"])
         blocks.append(f"{prompt} {case['reference_answer']} {citation}")
@@ -216,7 +221,7 @@ def evaluate(
 
     scores: list[GenerationScore] = []
     for case in cases:
-        chunks = retrieve(store, case["question"], k=4, provider=_PROVIDER)
+        chunks = retrieve(store, case["question"], k=4, provider=_PROVIDER, mode=_RETRIEVAL_MODE)
         context = build_context(chunks)
         prompt = prefix + _PROMPT.format(context=context, question=case["question"])
         answer = _generate(

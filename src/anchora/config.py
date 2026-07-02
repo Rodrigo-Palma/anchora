@@ -26,8 +26,15 @@ class Settings(BaseSettings):
     # Optional API-key gate for the serving endpoints. Empty = open (dev default).
     api_key: str = ""
 
-    # Retrieval defaults.
+    # Retrieval defaults. Mode is one of "dense" | "bm25" | "hybrid"; hybrid
+    # fuses dense cosine and BM25 rankings with Reciprocal Rank Fusion (RRF).
+    # Frozen experiment replays (scripts/score_generations.py) pin their own
+    # mode explicitly and are unaffected by this default.
     top_k: int = 4
+    retrieval_mode: str = "hybrid"
+    rrf_k: int = 60
+    bm25_k1: float = 1.5
+    bm25_b: float = 0.75
 
     # Eval gate: CI fails if measured faithfulness drops below this.
     faithfulness_threshold: float = 0.70

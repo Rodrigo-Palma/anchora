@@ -14,7 +14,7 @@ from dataclasses import dataclass
 
 # --- output grounding -------------------------------------------------------
 
-_CITATION_RE = re.compile(r"\[\d+\]")
+_CITATION_INDEX_RE = re.compile(r"\[(\d+)\]")
 _ABSTENTION = "could not find"
 
 # Conservative Portuguese refusal markers. The adapter sometimes declines in
@@ -46,9 +46,19 @@ def is_abstention(answer: str) -> bool:
     return any(marker in lowered for marker in _PT_ABSTENTION)
 
 
-def validate_output(answer: str) -> GuardrailResult:
-    """Pass if the answer cites at least one source or explicitly abstains."""
-    if _CITATION_RE.search(answer):
+def validate_output(answer: str, max_citation: int | None = None) -> GuardrailResult:
+    """Pass if the answer cites at least one source or explicitly abstains.
+
+    With ``max_citation`` set, every ``[n]`` must resolve to a retrieved chunk
+    (``1 <= n <= max_citation``). A model coaxed into fabricating ``[99]`` — or
+    into citing anything when nothing was retrieved — fails as ungrounded
+    instead of passing on bracket presence alone.
+    """
+    markers = [int(m) for m in _CITATION_INDEX_RE.findall(answer)]
+    if markers:
+        if max_citation is not None and any(not 1 <= n <= max_citation for n in markers):
+            bad = [n for n in markers if not 1 <= n <= max_citation]
+            return GuardrailResult(False, f"ungrounded: citation out of range {bad}")
         return GuardrailResult(True, "cited")
     if is_abstention(answer):
         return GuardrailResult(True, "abstained")
@@ -60,13 +70,21 @@ def validate_output(answer: str) -> GuardrailResult:
 _INJECTION_PATTERNS = (
     r"ignore (all |as |todas as |todas |suas |the )?(instru|previous|above|prior)",
     r"disregard (the |all |previous |prior )?(instruc|rules|context)",
+    r"(forget|discard) (your |the |all |previous |prior )*(instruc|rules|guidelines|context)",
     r"esque(ç|c)a (as |suas |todas )?(instru|regras)",
-    r"reveal (your |the )?(system )?prompt",
-    r"(mostre|revele|repita) (o |seu )?(system )?prompt",
+    r"(reveal|show|print|expose|output|leak|repeat) (me |back )?(your |the |everything )?"
+    r"(system |initial |original )?(prompt|instruc|rules)",
+    r"(mostre|revele|repita|imprima|exiba) (o |seu |a |as |tudo )?(system )?(prompt|instru|regras)",
+    r"repeat (everything|all|the text) (above|before|prior)",
     r"you are now",
     r"voc(ê|e) agora (é|e) ",
-    r"act as (an? )?(dan|jailbreak|unrestricted)",
+    r"act as (an? )?(dan|jailbreak|unrestricted|assistant with no)",
+    r"pretend (you |to )?(have no|are|there are no)",
+    r"(finja|finge) (que |ter )?(n(ã|a)o|sem)",
+    r"(override|bypass|skip|turn off|disable) (your |the |all )?(safety|content|filter|rule|guard)",
+    r"(if you had|without any|com nenhum|sem nenhum) (no )?(guidelines|rules|regras|restri)",
     r"developer mode",
+    r"^system:",
     r"sem (filtros|restri(ç|c)(õ|o)es|limites)",
 )
 _INJECTION_RE = re.compile("|".join(_INJECTION_PATTERNS), re.IGNORECASE)

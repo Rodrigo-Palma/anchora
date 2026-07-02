@@ -19,6 +19,7 @@ import re
 from dataclasses import dataclass, field
 
 from anchora import guardrails
+from anchora.embeddings import tokenize
 from anchora.llm import answer as llm_answer
 from anchora.rag import retrieve
 from anchora.store import Chunk, VectorStore
@@ -79,6 +80,20 @@ class Agent:
         # Optional deadline computation when the question carries a date + span.
         deadline_fact = self._maybe_compute_deadline(question, tool_calls)
 
+        # Out-of-domain floor: a question whose vocabulary shares nothing with
+        # the corpus (zero BM25 overlap, after the query bridge) cannot be
+        # grounded, so abstain instead of quoting the nearest-by-cosine chunk
+        # with an irrelevant citation. Deadline-tool questions still get their
+        # computed fact appended below.
+        if not self._has_corpus_overlap(question):
+            return AgentResult(
+                question=question,
+                answer=_append_fact(_NOT_FOUND, deadline_fact),
+                sources=[],
+                grounded=True,  # an explicit abstention is itself grounded
+                tool_calls=tool_calls,
+            )
+
         # Always ground answers in retrieved chunks.
         chunks = retrieve(self._store, question, k=self._k, provider=self._provider)
         tool_calls.append(
@@ -90,7 +105,7 @@ class Agent:
         )
 
         answer_text = self._compose_answer(question, chunks, deadline_fact)
-        grounded = guardrails.validate_output(answer_text).ok
+        grounded = guardrails.validate_output(answer_text, max_citation=len(chunks)).ok
         if not grounded:
             answer_text = _NOT_FOUND
             grounded = True  # an explicit abstention is itself grounded
@@ -102,6 +117,12 @@ class Agent:
             grounded=grounded,
             tool_calls=tool_calls,
         )
+
+    def _has_corpus_overlap(self, question: str) -> bool:
+        """True if at least one (bridged) query token occurs in the corpus."""
+        if len(self._store) == 0:
+            return False
+        return bool(self._store.lexical_indices(tokenize(question, query=True), k=1))
 
     def _maybe_compute_deadline(self, question: str, tool_calls: list[ToolCall]) -> str | None:
         date_match = _DATE_RE.search(question)

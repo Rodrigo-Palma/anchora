@@ -44,6 +44,9 @@ jobs:
       - name: Honest fine-tune eval (frozen generations + promotion gate, no GPU)
         run: uv run make eval-honest
 
+      - name: Adversarial guardrail suite (block-rate gate, offline)
+        run: uv run make adversarial
+
   terraform:
     runs-on: ubuntu-latest
     defaults:

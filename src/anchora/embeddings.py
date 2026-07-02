@@ -49,7 +49,7 @@ def _hash_embed(text: str, *, query: bool = False) -> list[float]:
     """
     dim = settings.embed_dim
     vector = [0.0] * dim
-    for token in _tokenize(text, query=query):
+    for token in tokenize(text, query=query):
         digest = int(hashlib.sha256(token.encode()).hexdigest(), 16)
         vector[digest % dim] += 1.0 if (digest >> 8) % 2 == 0 else -1.0
     return _normalize(vector)
@@ -133,7 +133,13 @@ def bridge_tokens(tokens: list[str]) -> list[str]:
     return bridged
 
 
-def _tokenize(text: str, *, query: bool = False) -> list[str]:
+def tokenize(text: str, *, query: bool = False) -> list[str]:
+    """Accent-folded content tokens (duplicates kept — BM25 needs frequencies).
+
+    Shared by the ``hash`` embedding provider and the BM25 index in
+    :mod:`anchora.lexical`, so dense-offline and lexical retrieval see the
+    exact same token stream (including the English→Portuguese query bridge).
+    """
     folded = _strip_accents(text.lower())
     tokens = [token for token in _split_words(folded) if token and token not in _STOPWORDS]
     return bridge_tokens(tokens) if query else tokens
