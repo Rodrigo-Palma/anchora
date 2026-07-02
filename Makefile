@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install lint fmt fmt-check type test eval eval-honest ablation adversarial check api dataset pipeline clean
+.PHONY: help install lint fmt fmt-check type test eval eval-honest ablation adversarial bench check api dataset pipeline clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -35,6 +35,9 @@ ablation: ## Measure retrieval modes (dense vs bm25 vs hybrid) on golden + holdo
 
 adversarial: ## Replay the adversarial guardrail suite and gate on the block rate
 	uv run python scripts/adversarial_suite.py --check
+
+bench: ## Benchmark offline pipeline latency (p50/p95 per stage) with a regression gate
+	uv run python scripts/benchmark.py --max-p95-ms 250
 
 check: lint fmt-check type test eval eval-honest adversarial ## Run the full local CI gate
 

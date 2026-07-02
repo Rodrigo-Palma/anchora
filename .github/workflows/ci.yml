@@ -47,6 +47,9 @@ jobs:
       - name: Adversarial guardrail suite (block-rate gate, offline)
         run: uv run make adversarial
 
+      - name: Latency benchmark (offline p95 regression gate)
+        run: uv run make bench
+
   terraform:
     runs-on: ubuntu-latest
     defaults:
