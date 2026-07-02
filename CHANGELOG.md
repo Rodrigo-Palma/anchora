@@ -11,6 +11,47 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
 - Recorded demo (asciinema/GIF) of the CLI + API flow.
 - Public write-up of the eval methodology.
 
+## [0.5.0] — 2026-07-01
+
+Retrieval quality, adversarial robustness, observability and documentation —
+each claim measured, each limitation documented rather than hidden.
+
+### Added
+- **Hybrid retrieval**: a pure-Python Okapi BM25 index (`lexical.py`) fused with
+  dense cosine via Reciprocal Rank Fusion; `retrieval_mode` (`dense|bm25|hybrid`,
+  default `hybrid`) in config. Backed by `scripts/ablation_retrieval.py`
+  (`make ablation`) measuring recall/precision/MRR per mode.
+- **Adversarial guardrail suite**: `data/adversarial/attacks.json` (44 attacks —
+  injection, jailbreak, PII exfiltration, citation forgery, off-domain) replayed
+  by `scripts/adversarial_suite.py` (`make adversarial`); gates CI.
+- **Observability**: per-stage tracing (`observability.py`) on every
+  `AgentResult`; `trace_id` + `timing_ms` on `/ask`; `x-request-id` on every
+  response.
+- **Latency benchmark**: `scripts/benchmark.py` (`make bench`) with a p95
+  regression gate.
+- **SSE streaming**: `POST /ask/stream` streams the answer then a terminal
+  `done` event with sources, grounding and trace.
+- **Judge calibration**: `scripts/calibrate_judge.py` measures proxy-vs-LLM-judge
+  agreement (`docs/eval-calibration.md`).
+- **Property-based tests** (`hypothesis`) for chunking and deadline invariants.
+- **Docs**: ADRs (`docs/adr/0001-0005`), model card (`docs/model-card.md`),
+  dataset datasheet (`data/README.md`).
+
+### Changed
+- `validate_output` now verifies every `[n]` resolves to a retrieved chunk;
+  forged indices abstain instead of passing as grounded.
+- Out-of-domain floor: questions with no lexical overlap with the corpus abstain
+  instead of quoting the nearest-by-cosine chunk.
+- Hardened injection/jailbreak patterns (forget/override/print-prompt/pretend/
+  `SYSTEM:`), closing regressions the adversarial suite exposed.
+- Fine-tune replays pin `dense` retrieval so frozen generations are re-scored
+  under the mode they were produced in.
+
+### Fixed
+- README roadmap corrected: the 5-abstention adapter **was** promoted via the
+  gate (10-abstention variant auto-rejected); the LLM-judge pointer now
+  references the calibration script instead of the registry tool.
+
 ## [0.4.0] — 2026-06-24
 
 ### Added

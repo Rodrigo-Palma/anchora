@@ -21,6 +21,7 @@ from dataclasses import dataclass, field
 from anchora import guardrails
 from anchora.embeddings import tokenize
 from anchora.llm import answer as llm_answer
+from anchora.observability import Trace
 from anchora.rag import retrieve
 from anchora.store import Chunk, VectorStore
 from anchora.tools import legal_deadline
@@ -49,6 +50,7 @@ class AgentResult:
     grounded: bool
     tool_calls: list[ToolCall] = field(default_factory=list)
     refused: bool = False
+    trace: Trace = field(default_factory=Trace)
 
 
 class Agent:
@@ -65,7 +67,9 @@ class Agent:
         self._use_llm = use_llm
 
     def run(self, question: str) -> AgentResult:
-        guard = guardrails.check_input(question)
+        trace = Trace()
+        with trace.stage("guardrail_input"):
+            guard = guardrails.check_input(question)
         if not guard.ok:
             return AgentResult(
                 question=question,
@@ -73,6 +77,7 @@ class Agent:
                 sources=[],
                 grounded=False,
                 refused=True,
+                trace=trace,
             )
 
         tool_calls: list[ToolCall] = []
@@ -85,17 +90,21 @@ class Agent:
         # grounded, so abstain instead of quoting the nearest-by-cosine chunk
         # with an irrelevant citation. Deadline-tool questions still get their
         # computed fact appended below.
-        if not self._has_corpus_overlap(question):
+        with trace.stage("domain_check"):
+            in_domain = self._has_corpus_overlap(question)
+        if not in_domain:
             return AgentResult(
                 question=question,
                 answer=_append_fact(_NOT_FOUND, deadline_fact),
                 sources=[],
                 grounded=True,  # an explicit abstention is itself grounded
                 tool_calls=tool_calls,
+                trace=trace,
             )
 
         # Always ground answers in retrieved chunks.
-        chunks = retrieve(self._store, question, k=self._k, provider=self._provider)
+        with trace.stage("retrieval"):
+            chunks = retrieve(self._store, question, k=self._k, provider=self._provider)
         tool_calls.append(
             ToolCall(
                 name="search_documents",
@@ -104,8 +113,10 @@ class Agent:
             )
         )
 
-        answer_text = self._compose_answer(question, chunks, deadline_fact)
-        grounded = guardrails.validate_output(answer_text, max_citation=len(chunks)).ok
+        with trace.stage("generation"):
+            answer_text = self._compose_answer(question, chunks, deadline_fact)
+        with trace.stage("guardrail_output"):
+            grounded = guardrails.validate_output(answer_text, max_citation=len(chunks)).ok
         if not grounded:
             answer_text = _NOT_FOUND
             grounded = True  # an explicit abstention is itself grounded
@@ -116,6 +127,7 @@ class Agent:
             sources=sorted({chunk.title or chunk.doc_id for chunk in chunks}),
             grounded=grounded,
             tool_calls=tool_calls,
+            trace=trace,
         )
 
     def _has_corpus_overlap(self, question: str) -> bool:

@@ -16,10 +16,18 @@ engineering follows from that stance:
 
 - **RAG + agent with tools** — retrieval plus `legal_deadline` calculation and
   `search_documents`, not just "chat over a PDF";
-- **production guardrails** — anti-injection, PII redaction, and a mandatory
-  grounding check that forces a citation `[n]` or an explicit abstention;
+- **hybrid retrieval, measured** — BM25 + dense fused with Reciprocal Rank
+  Fusion, with an [ablation](#retrieval-hybrid-bm25--dense) proving the default
+  beats either alone, not just asserting it;
+- **production guardrails, attacked on purpose** — anti-injection, PII redaction,
+  and a mandatory grounding check, verified by a
+  [44-attack adversarial suite](#adversarial-guardrail-suite) that gates CI;
 - **honest, reproducible evals in CI** — deterministic lexical proxies gate the
-  build with no model, no network, and no cost;
+  build with no model, no network, and no cost — and are
+  [calibrated](docs/eval-calibration.md) against a real LLM judge so we know
+  their blind spots;
+- **observable** — every answer carries a `trace_id` and per-stage timings, with
+  a [latency benchmark](#latency) that gates against p95 regressions;
 - **a fine-tuning study that caught its own leak** — a headline 0.92 that turned
   out to be measured on the training set, and what the real number was ([below](#fine-tuning-how-i-caught-my-own-eval-grading-its-own-homework));
 - **MLOps** — process → train → evaluate → register, with a promotion gate that
@@ -137,7 +145,16 @@ curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
   -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
 ```
 
+Streaming (Server-Sent Events) — incremental `token` events then a terminal
+`done` event carrying sources, grounding and the trace:
+
+```bash
+curl -N -s -X POST localhost:8000/ask/stream -H 'content-type: application/json' \
+  -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
+```
+
 Set `ANCHORA_API_KEY` (or `api_key` in `.env`) to require the `x-api-key` header.
+Every response echoes an `x-request-id` header (minted if the caller omits it).
 
 ---
 
@@ -154,7 +171,50 @@ Set `ANCHORA_API_KEY` (or `api_key` in `.env`) to require the `x-api-key` header
 
 The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0** or if **average faithfulness < 0.70** (`faithfulness_threshold`). The **LLM-judge** versions (DeepEval/RAGAS via Ollama) can be run locally — see `scripts/compare_evals.py`.
 
-> Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies provide an objective, free floor; the local *judge* remains available for richer analysis.
+> Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies provide an objective, free floor; the local *judge* remains available for richer analysis. How far the proxy tracks a real judge — and where it is blind (negation, paraphrase, numbers) — is measured in [`scripts/calibrate_judge.py`](scripts/calibrate_judge.py) and documented in [`docs/eval-calibration.md`](docs/eval-calibration.md).
+
+### Retrieval: hybrid (BM25 + dense)
+
+Dense cosine generalizes across phrasing; BM25 nails rare statute vocabulary.
+`anchora` fuses both with Reciprocal Rank Fusion (`retrieval_mode=hybrid`, the
+default). The choice is backed by an ablation, not a hunch — reproduce it with
+`make ablation` ([ADR 4](docs/adr/0004-hybrid-retrieval-rrf.md)):
+
+| Dataset | Mode | Recall@4 | Precision@4 | MRR@4 |
+|---|---|---:|---:|---:|
+| golden (train, n=24) | dense | 1.000 | 0.438 | 0.972 |
+| golden (train, n=24) | bm25 | 1.000 | 0.622 | 1.000 |
+| golden (train, n=24) | **hybrid** | 1.000 | 0.438 | 1.000 |
+| holdout (unseen) | dense | 0.864 | 0.352 | 0.833 |
+| holdout (unseen) | bm25 | 0.909 | 0.542 | 0.886 |
+| holdout (unseen) | **hybrid** | 0.909 | 0.386 | 0.909 |
+
+On unseen questions hybrid matches BM25's recall while topping the MRR of both.
+
+### Adversarial guardrail suite
+
+`data/adversarial/attacks.json` holds 44 attacks — prompt injection, jailbreak,
+PII exfiltration, citation forgery, off-domain — replayed through the served
+pipeline by `scripts/adversarial_suite.py` (`make adversarial`, a CI gate):
+
+| Category | Handled |
+|---|---:|
+| citation_forgery | 6/6 |
+| injection | 11/11 |
+| jailbreak | 7/7 |
+| off_domain | 11/11 |
+| pii_exfiltration | 8/8 |
+
+3 limitations (base64-encoded payload, indirect roleplay, single-token lexical
+collision) are reported as **documented known gaps** rather than claimed as
+blocked — the same honesty stance as the evals.
+
+### Latency
+
+`make bench` runs the offline pipeline over the golden questions and reports
+p50/p95 per stage with a regression gate (`--max-p95-ms`). Every `AgentResult`
+and `/ask` response carries a `trace_id` and per-stage `timing_ms`, and the API
+echoes an `x-request-id` on every response for correlation.
 
 ### Fine-tuning: how I caught my own eval grading its own homework
 
@@ -216,11 +276,25 @@ Full arc — every failed run, the leak, the fix, the ratio sweep, the gate — 
 |---|---|
 | **v0.1** | RAG + agent with tools + FastAPI + README/diagram ✅ |
 | **v0.2** | *evals* in CI + guardrails ✅ |
-| **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison measured; adapter not promoted yet ⚠️ |
+| **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison on a held-out set; **5-abstention adapter promoted** via the gate, 10-abstention variant auto-rejected for regressing citation accuracy ✅ |
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
+| **v0.5** | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
 | **v1.0** | demo + write-up of the eval methodology |
 
 ---
+
+## Documentation
+
+- **Architecture decisions** — [`docs/adr/`](docs/adr/): deterministic proxies in
+  CI, local-first, hand-rolled RAG, hybrid retrieval (RRF), and 5-vs-10 abstention.
+- **Model card** — [`docs/model-card.md`](docs/model-card.md): the promoted LoRA
+  adapter, its held-out metrics, limitations and governance.
+- **Datasheet** — [`data/README.md`](data/README.md): what every dataset is, how
+  it was built, and the synthetic-PII note.
+- **Eval calibration** — [`docs/eval-calibration.md`](docs/eval-calibration.md):
+  proxy-vs-judge agreement and the proxy's blind spots.
+- **Fine-tuning arc** — [`docs/finetuning-results.md`](docs/finetuning-results.md):
+  the leak, the fix, the ratio sweep, the gate.
 
 ## Development
 
@@ -231,7 +305,8 @@ uv run mypy
 uv run pytest
 ```
 
-Or all at once: `make check`.
+Or all at once: `make check` — runs lint, format, types, tests, the eval gate,
+the honest fine-tune replay, the adversarial suite and the latency benchmark.
 
 ## License
 
