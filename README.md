@@ -272,14 +272,37 @@ Full arc — every failed run, the leak, the fix, the ratio sweep, the gate — 
 
 ## Roadmap
 
+**Shipped**
+
 | Version | Deliverable |
 |---|---|
 | **v0.1** | RAG + agent with tools + FastAPI + README/diagram ✅ |
 | **v0.2** | *evals* in CI + guardrails ✅ |
 | **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison on a held-out set; **5-abstention adapter promoted** via the gate, 10-abstention variant auto-rejected for regressing citation accuracy ✅ |
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
-| **v0.5** | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
-| **v1.0** | demo + write-up of the eval methodology |
+| **v0.5** ← current | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
+
+**Next — v1.0 (demo + close the documented gaps)**
+
+Every item below is traceable to a limitation this repo already names, so the
+roadmap closes known gaps instead of chasing new surface:
+
+- [ ] **Recorded demo** (asciinema/GIF) of the CLI + API flow, linked from the README.
+- [ ] **Methodology write-up** — the eval-leak → honest-holdout arc as a short public post.
+- [ ] **Semantic out-of-domain floor** — replace the lexical abstain check with an
+  embedding-similarity threshold, closing the single-token-collision gap (`ood-008`
+  in the adversarial suite).
+- [ ] **Real-token SSE** — stream tokens from Ollama as they decode, replacing the
+  current post-hoc word chunking (see `POST /ask/stream`).
+- [ ] **Judge-calibrated thresholds** — once `scripts/calibrate_judge.py` has a
+  judged sample, set the CI faithfulness floor from measured proxy/judge agreement
+  rather than a hand-picked 0.70.
+
+**Deliberately out of scope** (stated so the boundaries are a choice, not an omission)
+
+- A hosted-API path — local-first is a design constraint ([ADR 2](docs/adr/0002-local-first-no-paid-apis.md)), not a missing feature.
+- A web UI — this is a retrieval/eval/guardrails engine; the API and CLI are the surface.
+- A larger corpus — the point is measured behaviour on a fixed, auditable set, not coverage breadth.
 
 ---
 
