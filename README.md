@@ -8,6 +8,14 @@ The domain is Brazilian public law: LAI, Lei 8.112, Defensoria Pública, LGPD, C
 
 ---
 
+## Demo
+
+![demo](docs/demo.gif)
+
+Everything above runs **offline** (`--provider hash --no-llm`) — the full
+walkthrough, including ingestion and the eval gate, is in
+[`docs/demo.md`](docs/demo.md).
+
 ## What makes this more than a RAG demo
 
 Most RAG demos work on the happy path. The focus here is the opposite: **measuring
