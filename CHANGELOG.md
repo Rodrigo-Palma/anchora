@@ -7,6 +7,18 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
 
 ## [Unreleased]
 
+### Added
+- **Out-of-domain floor** (`domain.py`, [ADR 6](docs/adr/0006-out-of-domain-floor.md)):
+  the abstain check now requires at least `ood_min_overlap` distinct corpus
+  tokens (default 2) instead of a single collision, plus an optional dense-cosine
+  floor (`ood_similarity_threshold`, default off) for the production embedder.
+  `VectorStore.corpus_vocabulary()` backs the overlap count.
+
+### Fixed
+- Closed the `ood-008` known gap (a single incidental token defeated the old
+  zero-overlap floor). The adversarial suite now reports `off_domain` 12/12 and
+  two documented gaps (`inj-012`, `jb-008`), down from three.
+
 ### To do (v1.0)
 - Recorded demo (asciinema/GIF) of the CLI + API flow.
 - Public write-up of the eval methodology.

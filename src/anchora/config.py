@@ -36,6 +36,16 @@ class Settings(BaseSettings):
     bm25_k1: float = 1.5
     bm25_b: float = 0.75
 
+    # Out-of-domain floor (see docs/adr/0006). A question is in-domain only if it
+    # overlaps the corpus on at least ``ood_min_overlap`` distinct (bridged)
+    # tokens; this offline-reproducible signal closes the single incidental-token
+    # collision (adversarial ``ood-008``). ``ood_similarity_threshold`` adds a
+    # dense-cosine floor on top — meaningful on the real multilingual embedder,
+    # so it defaults to 0.0 (disabled) because the offline ``hash`` cosine does
+    # not separate in-domain from off-domain.
+    ood_min_overlap: int = 2
+    ood_similarity_threshold: float = 0.0
+
     # Eval gate: CI fails if measured faithfulness drops below this.
     faithfulness_threshold: float = 0.70
 

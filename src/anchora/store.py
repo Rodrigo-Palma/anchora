@@ -33,6 +33,7 @@ class VectorStore:
     def __init__(self) -> None:
         self._chunks: list[Chunk] = []
         self._bm25: BM25Index | None = None
+        self._vocab: frozenset[str] | None = None
 
     def __len__(self) -> int:
         return len(self._chunks)
@@ -40,6 +41,21 @@ class VectorStore:
     def add(self, chunks: list[Chunk]) -> None:
         self._chunks.extend(chunks)
         self._bm25 = None  # chunk set changed; rebuild lazily on next lexical query
+        self._vocab = None  # ditto for the cached corpus vocabulary
+
+    def corpus_vocabulary(self) -> frozenset[str]:
+        """Distinct content tokens across all chunks (cached, rebuilt on ``add``).
+
+        The out-of-domain floor (:mod:`anchora.domain`) counts how many distinct
+        query tokens hit this set, so a single incidental collision no longer
+        passes as in-domain.
+        """
+        if self._vocab is None:
+            vocab: set[str] = set()
+            for chunk in self._chunks:
+                vocab.update(tokenize(chunk.text))
+            self._vocab = frozenset(vocab)
+        return self._vocab
 
     def chunk_at(self, index: int) -> Chunk:
         return self._chunks[index]
