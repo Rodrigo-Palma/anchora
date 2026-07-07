@@ -16,7 +16,7 @@ sys.path.insert(0, str(_ROOT / "scripts"))
 
 import adversarial_suite as adv  # noqa: E402
 
-_DOCUMENTED_GAPS = {"inj-012", "jb-008", "ood-008"}
+_DOCUMENTED_GAPS = {"inj-012", "jb-008"}
 
 
 def test_all_gated_attacks_are_handled() -> None:

@@ -210,12 +210,13 @@ pipeline by `scripts/adversarial_suite.py` (`make adversarial`, a CI gate):
 | citation_forgery | 6/6 |
 | injection | 11/11 |
 | jailbreak | 7/7 |
-| off_domain | 11/11 |
+| off_domain | 12/12 |
 | pii_exfiltration | 8/8 |
 
-3 limitations (base64-encoded payload, indirect roleplay, single-token lexical
-collision) are reported as **documented known gaps** rather than claimed as
-blocked — the same honesty stance as the evals.
+2 limitations (base64-encoded payload, indirect roleplay) are reported as
+**documented known gaps** rather than claimed as blocked — the same honesty
+stance as the evals. The former single-token collision gap (`ood-008`) is now
+closed by the out-of-domain floor ([ADR 6](docs/adr/0006-out-of-domain-floor.md)).
 
 ### Latency
 
@@ -297,9 +298,10 @@ roadmap closes known gaps instead of chasing new surface:
 
 - [ ] **Recorded demo** (asciinema/GIF) of the CLI + API flow, linked from the README.
 - [ ] **Methodology write-up** — the eval-leak → honest-holdout arc as a short public post.
-- [ ] **Semantic out-of-domain floor** — replace the lexical abstain check with an
-  embedding-similarity threshold, closing the single-token-collision gap (`ood-008`
-  in the adversarial suite).
+- [x] **Out-of-domain floor** — the abstain check now requires several distinct
+  corpus tokens (not one incidental collision) and exposes an optional dense
+  similarity threshold for the production embedder, closing the single-token gap
+  (`ood-008`). Calibrated on measured overlap, offline. ([ADR 6](docs/adr/0006-out-of-domain-floor.md).)
 - [ ] **Real-token SSE** — stream tokens from Ollama as they decode, replacing the
   current post-hoc word chunking (see `POST /ask/stream`).
 - [ ] **Judge-calibrated thresholds** — once `scripts/calibrate_judge.py` has a
@@ -317,7 +319,8 @@ roadmap closes known gaps instead of chasing new surface:
 ## Documentation
 
 - **Architecture decisions** — [`docs/adr/`](docs/adr/): deterministic proxies in
-  CI, local-first, hand-rolled RAG, hybrid retrieval (RRF), and 5-vs-10 abstention.
+  CI, local-first, hand-rolled RAG, hybrid retrieval (RRF), 5-vs-10 abstention,
+  and the out-of-domain floor.
 - **Model card** — [`docs/model-card.md`](docs/model-card.md): the promoted LoRA
   adapter, its held-out metrics, limitations and governance.
 - **Datasheet** — [`data/README.md`](data/README.md): what every dataset is, how

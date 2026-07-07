@@ -19,7 +19,7 @@ import re
 from dataclasses import dataclass, field
 
 from anchora import guardrails
-from anchora.embeddings import tokenize
+from anchora.domain import assess_domain
 from anchora.llm import answer as llm_answer
 from anchora.observability import Trace
 from anchora.rag import retrieve
@@ -85,14 +85,15 @@ class Agent:
         # Optional deadline computation when the question carries a date + span.
         deadline_fact = self._maybe_compute_deadline(question, tool_calls)
 
-        # Out-of-domain floor: a question whose vocabulary shares nothing with
-        # the corpus (zero BM25 overlap, after the query bridge) cannot be
-        # grounded, so abstain instead of quoting the nearest-by-cosine chunk
-        # with an irrelevant citation. Deadline-tool questions still get their
-        # computed fact appended below.
+        # Out-of-domain floor: a question that barely touches the corpus cannot
+        # be grounded, so abstain instead of quoting the nearest-by-cosine chunk
+        # with an irrelevant citation. The floor requires several distinct
+        # corpus tokens (not just one incidental collision) — see
+        # anchora.domain. Deadline-tool questions still get their computed fact
+        # appended below.
         with trace.stage("domain_check"):
-            in_domain = self._has_corpus_overlap(question)
-        if not in_domain:
+            verdict = assess_domain(question, self._store, provider=self._provider)
+        if not verdict.in_domain:
             return AgentResult(
                 question=question,
                 answer=_append_fact(_NOT_FOUND, deadline_fact),
@@ -129,12 +130,6 @@ class Agent:
             tool_calls=tool_calls,
             trace=trace,
         )
-
-    def _has_corpus_overlap(self, question: str) -> bool:
-        """True if at least one (bridged) query token occurs in the corpus."""
-        if len(self._store) == 0:
-            return False
-        return bool(self._store.lexical_indices(tokenize(question, query=True), k=1))
 
     def _maybe_compute_deadline(self, question: str, tool_calls: list[ToolCall]) -> str | None:
         date_match = _DATE_RE.search(question)
