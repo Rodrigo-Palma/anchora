@@ -25,11 +25,13 @@ engineering follows from that stance:
 - **RAG + agent with tools** — retrieval plus `legal_deadline` calculation and
   `search_documents`, not just "chat over a PDF";
 - **hybrid retrieval, measured** — BM25 + dense fused with Reciprocal Rank
-  Fusion, with an [ablation](#retrieval-hybrid-bm25--dense) proving the default
-  beats either alone, not just asserting it;
+  Fusion, with an [ablation](#retrieval-hybrid-bm25--dense) against either mode
+  alone (on 22 held-out questions the three modes are not distinguishable on
+  recall);
 - **production guardrails, attacked on purpose** — anti-injection, PII redaction,
   and a mandatory grounding check, verified by a
-  [44-attack adversarial suite](#adversarial-guardrail-suite) that gates CI;
+  [46-attack adversarial suite](#adversarial-guardrail-suite) (44 gated) that
+  gates CI;
 - **honest, reproducible evals in CI** — deterministic lexical proxies gate the
   build with no model, no network, and no cost — and are
   [calibrated](docs/eval-calibration.md) against a real LLM judge so we know
@@ -37,9 +39,11 @@ engineering follows from that stance:
 - **observable** — every answer carries a `trace_id` and per-stage timings, with
   a [latency benchmark](#latency) that gates against p95 regressions;
 - **a fine-tuning study that caught its own leak** — a headline 0.92 that turned
-  out to be measured on the training set, and what the real number was ([below](#fine-tuning-how-i-caught-my-own-eval-grading-its-own-homework));
+  out to be measured on the training set, and what a 28-question holdout can and
+  cannot say instead ([below](#fine-tuning-how-i-caught-my-own-eval-grading-its-own-homework));
 - **MLOps** — process → train → evaluate → register, with a promotion gate that
-  auto-rejects regressions, plus SageMaker and Terraform scaffolding;
+  rejects a candidate whose held-out metrics drop, plus SageMaker and Terraform
+  scaffolding;
 - **engineering hygiene** — `uv`, `ruff`, `mypy --strict`, `pytest` with coverage,
   Docker, GitHub Actions.
 
@@ -177,7 +181,7 @@ Every response echoes an `x-request-id` header (minted if the caller omits it).
 | `faithfulness` | how much of the answer is supported by the retrieved context |
 | `answer_relevance` | how much of the question's intent the answer covers |
 
-The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0** or if **average faithfulness < 0.70** (`faithfulness_threshold`). The **LLM-judge** versions (DeepEval/RAGAS via Ollama) can be run locally — see `scripts/compare_evals.py`.
+The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0** or if **average faithfulness < 0.70** (`faithfulness_threshold`). Both thresholds are hand-picked, not derived from data. Today the gate passes with recall 24/24 (Wilson 95% [0.86, 1.00]); those 24 questions are the ones the EN→PT glossary bridge was fit to, so this is a regression check on known questions, not a measure of retrieval on new ones (for that, see the holdout rows below). The **LLM-judge** versions (DeepEval/RAGAS via Ollama) can be run locally with `scripts/compare_evals.py`.
 
 > Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies provide an objective, free floor; the local *judge* remains available for richer analysis. How far the proxy tracks a real judge — and where it is blind (negation, paraphrase, numbers) — is measured in [`scripts/calibrate_judge.py`](scripts/calibrate_judge.py) and documented in [`docs/eval-calibration.md`](docs/eval-calibration.md).
 
@@ -185,38 +189,55 @@ The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0**
 
 Dense cosine generalizes across phrasing; BM25 nails rare statute vocabulary.
 `anchora` fuses both with Reciprocal Rank Fusion (`retrieval_mode=hybrid`, the
-default). The choice is backed by an ablation, not a hunch — reproduce it with
-`make ablation` ([ADR 4](docs/adr/0004-hybrid-retrieval-rrf.md)):
+default). The three modes are compared in an ablation; reproduce it with
+`make ablation` ([ADR 4](docs/adr/0004-hybrid-retrieval-rrf.md)).
+
+Recall is `k/n` with a 95% Wilson interval; precision and MRR are per-question
+means with a seeded 95% bootstrap interval (`make ablation`, `--markdown` for
+this table).
 
 | Dataset | Mode | Recall@4 | Precision@4 | MRR@4 |
-|---|---|---:|---:|---:|
-| golden (train, n=24) | dense | 1.000 | 0.438 | 0.972 |
-| golden (train, n=24) | bm25 | 1.000 | 0.622 | 1.000 |
-| golden (train, n=24) | **hybrid** | 1.000 | 0.438 | 1.000 |
-| holdout (unseen) | dense | 0.864 | 0.352 | 0.833 |
-| holdout (unseen) | bm25 | 0.909 | 0.542 | 0.886 |
-| holdout (unseen) | **hybrid** | 0.909 | 0.386 | 0.909 |
+|---|---|---|---|---|
+| golden (train, n=24) | dense | 24/24 = 1.000 [0.86, 1.00] | 0.438 [0.40, 0.48] | 0.972 [0.92, 1.00] |
+| golden (train, n=24) | bm25 | 24/24 = 1.000 [0.86, 1.00] | 0.622 [0.51, 0.73] | 1.000 [1.00, 1.00] |
+| golden (train, n=24) | **hybrid** | 24/24 = 1.000 [0.86, 1.00] | 0.438 [0.40, 0.48] | 1.000 [1.00, 1.00] |
+| holdout (unseen, n=22) | dense | 19/22 = 0.864 [0.67, 0.95] | 0.352 [0.27, 0.42] | 0.833 [0.68, 0.95] |
+| holdout (unseen, n=22) | bm25 | 20/22 = 0.909 [0.72, 0.97] | 0.542 [0.41, 0.68] | 0.886 [0.75, 1.00] |
+| holdout (unseen, n=22) | **hybrid** | 20/22 = 0.909 [0.72, 0.97] | 0.386 [0.32, 0.45] | 0.909 [0.77, 1.00] |
 
-On unseen questions hybrid matches BM25's recall while topping the MRR of both.
+What 22 held-out questions support: hybrid and BM25 miss the same 2 questions;
+hybrid finds one question dense misses and dense finds none that hybrid misses
+(paired exact McNemar p = 1.0). The MRR gaps are fractions of one question and
+the intervals overlap. BM25 has the highest precision@4 on both sets. So the
+ablation does not show that hybrid beats either mode; hybrid is the default
+because it does not lose recall to BM25 on this set and keeps dense's tolerance
+to paraphrase, which a 22-question holdout cannot measure. A larger holdout
+would be needed to separate the three.
 
 ### Adversarial guardrail suite
 
-`data/adversarial/attacks.json` holds 44 attacks — prompt injection, jailbreak,
-PII exfiltration, citation forgery, off-domain — replayed through the served
-pipeline by `scripts/adversarial_suite.py` (`make adversarial`, a CI gate):
+`data/adversarial/attacks.json` holds 46 hand-written attacks (prompt injection,
+jailbreak, PII exfiltration, citation forgery, off-domain), replayed through the
+served pipeline by `scripts/adversarial_suite.py` (`make adversarial`, a CI gate).
+Rates are `k/n` with a 95% Wilson interval:
 
-| Category | Handled |
-|---|---:|
-| citation_forgery | 6/6 |
-| injection | 11/11 |
-| jailbreak | 7/7 |
-| off_domain | 12/12 |
-| pii_exfiltration | 8/8 |
+| Category | Handled (gated) |
+|---|---|
+| citation_forgery | 6/6 [0.61, 1.00] |
+| injection | 11/11 [0.74, 1.00] |
+| jailbreak | 7/7 [0.65, 1.00] |
+| off_domain | 12/12 [0.76, 1.00] |
+| pii_exfiltration | 8/8 [0.68, 1.00] |
+| **total, gated** | **44/44 [0.92, 1.00]** |
+| total, all 46 attacks | 44/46 = 0.957 [0.85, 0.99] |
 
-2 limitations (base64-encoded payload, indirect roleplay) are reported as
-**documented known gaps** rather than claimed as blocked — the same honesty
-stance as the evals. The former single-token collision gap (`ood-008`) is now
-closed by the out-of-domain floor ([ADR 6](docs/adr/0006-out-of-domain-floor.md)).
+The 2 attacks not handled (base64-encoded payload `inj-012`, indirect roleplay
+`jb-008`) are kept in the file as documented known gaps and excluded from the
+gate, which is why the gated total reads 44/44 and the full total 44/46. The
+attacks were written by the same person who wrote the guardrails, so the
+intervals describe this suite only; they do not bound the miss rate on attacks
+outside it. The former single-token collision gap (`ood-008`) is now closed by
+the out-of-domain floor ([ADR 6](docs/adr/0006-out-of-domain-floor.md)).
 
 ### Latency
 
@@ -230,31 +251,60 @@ echoes an `x-request-id` on every response for correlation.
 LoRA fine-tuning is wired with `scripts/finetune_lora.py` and
 `scripts/evaluate_finetune.py`, run on Apple Silicon MPS against
 `Qwen/Qwen2.5-1.5B-Instruct`. The first run looked like a triumph:
-**0.92 grounded rate vs. 0.17 for the base model.**
+**0.92 grounded rate vs. 0.17 for the base model** (22/24 vs 4/24). The outputs
+of that run were never committed, so those two numbers cannot be reproduced from
+this repo; they stay here only as the record of the mistake below.
 
 Then I noticed the training set was built from the same 24-question golden set I
-was scoring on — **train == test.** The 0.92 mostly measured memorization of 24
+was scoring on: **train == test.** The 0.92 mostly measured memorization of 24
 answers, not a skill. What I did about it:
 
-1. **Built a disjoint holdout** — 28 brand-new questions over the same corpus
+1. **Built a disjoint holdout**: 28 new questions over the same corpus
    (22 answerable, 6 out-of-corpus), asserted disjoint from training in
    `tests/test_holdout.py`. The adapter never saw them.
-2. **Added a fair few-shot baseline** — the base model given the same `PT + [n]`
+2. **Added a fair few-shot baseline**: the base model given the same `PT + [n]`
    output contract via few-shot, to separate *learned knowledge* from *learned
    format*.
-3. **Fixed the metrics** — `grounded_rate` only checked for a `[n]` bracket, so I
+3. **Fixed the metrics**: `grounded_rate` only checked for a `[n]` bracket, so I
    added `citation_correct` (does the cited index resolve to the *expected*
    document?); the exact-English abstention check missed Portuguese refusals, so I
    added PT-aware detection.
 
-On the holdout, under metrics that measure what they claim, the promotion
-candidate (`LoRA + 5 abstention`) still beats the base+few-shot baseline on both
-axes — the win is smaller than 0.92, but real:
+Held-out results for the promotion candidate (`LoRA + 5 abstention`) against the
+base+few-shot baseline. Rates are `k/n` with a 95% Wilson interval; faithfulness
+is the mean of a lexical proxy with a seeded 95% bootstrap interval:
 
-| Row | Citation-correct ↑ | Abstention (PT-aware) ↑ | Faithfulness ↑ |
-|---|---:|---:|---:|
-| base + few-shot | 0.500 | 0.167 | 0.197 |
-| **LoRA + 5 abstention** | **0.818** | **0.833** | 0.726 |
+| Row | Citation-correct (n=22) | Abstention, PT-aware (n=6) | Faithfulness (n=22) |
+|---|---|---|---|
+| base + few-shot | 11/22 = 0.500 [0.31, 0.69] | 1/6 = 0.167 [0.03, 0.56] | 0.197 [0.14, 0.26] |
+| LoRA + 5 abstention | 18/22 = 0.818 [0.61, 0.93] | 5/6 = 0.833 [0.44, 0.97] | 0.726 [0.55, 0.88] |
+
+Both rows answer the same questions, so the comparison that uses the pairing is
+the exact McNemar test on the questions where they disagree
+(`uv run python scripts/score_generations.py --report`):
+
+| Comparison | Metric | Only A right | Only B right | p (exact) |
+|---|---|---:|---:|---:|
+| LoRA+5 vs base+few-shot | citation-correct | 7 | 0 | 0.016 |
+| LoRA+5 vs base+few-shot | abstention | 4 | 0 | 0.125 |
+| LoRA+5 vs LoRA+0 | abstention | 4 | 0 | 0.125 |
+| LoRA+5 vs LoRA+10 | citation-correct | 5 | 1 | 0.219 |
+
+What this sample supports:
+
+- **Citation: a difference, with a caveat.** The adapter cites the right
+  document on 7 questions the baseline gets wrong, and the reverse never happens
+  (p = 0.016). The single-proportion intervals touch at the edge (0.61 vs 0.69);
+  the paired test is the sharper read. The comparison was not pre-registered, and
+  across the six paired comparisons the report prints, a Bonferroni correction
+  puts it at 0.094.
+- **Abstention: not distinguishable at n=6.** 5/6 vs 1/6 looks large, but the
+  intervals overlap ([0.44, 0.97] vs [0.03, 0.56]) and the paired p is 0.125.
+  With 6 out-of-corpus questions the smallest p any result could reach is 0.031
+  (all 6 flipping the same way), so this holdout cannot establish an abstention
+  effect. The 0.833 is what was measured, not a rate to expect.
+- **Faithfulness** intervals do not overlap, but it is a token-overlap proxy that
+  is blind to negation and wrong numbers ([calibration](docs/eval-calibration.md)).
 
 These numbers are **reproduced by CI without a GPU**. Generation needs Apple
 Silicon, but the real decoded outputs are frozen in
@@ -264,17 +314,27 @@ same scorer (`retrieval = hash`), so a mismatch fails the build:
 ```bash
 # Reproduce (no GPU, no network): re-score frozen generations + replay the gate
 make eval-honest
+# Counts, intervals and paired tests behind the tables above
+uv run python scripts/score_generations.py --report
 ```
 
 The holdout also exposed a failure the leaked eval never could: the first adapter
-**never abstained** — on out-of-corpus questions it fabricated confident answers
-with fake citations. Adding 5 abstention examples fixed it (0.00 → 0.83) at a
-small, measured cost to answer precision; a sweep showed 5 examples dominate 10 on
-every axis. A promotion gate wired to these honest metrics
-(`gate_promotion.py` + `registry.regressions`) then **auto-rejected** the
-over-cautious 10-example variant, which regressed citation accuracy 0.818 → 0.636.
+answered out-of-corpus questions with confident text and fake citations (0/6
+refusals under the exact-English check, 1/6 under the PT-aware one). Adding 5
+abstention examples moved that to 5/6. The direction is what the fix was meant to
+do; 6 questions are too few to call it established (p = 0.125 above). A 10-example
+mix refused just as often (5/6) and cited the right document less often (14/22
+vs 18/22).
 
-Full arc — every failed run, the leak, the fix, the ratio sweep, the gate — in
+A promotion gate (`gate_promotion.py` + `registry.regressions`) rejects a
+candidate whose held-out citation or abstention rate is below the incumbent's,
+and it rejected the 10-example variant for 18/22 → 14/22. That drop is 5
+questions lost and 1 gained (paired p = 0.219): on 22 questions it is within
+noise. The gate compares point estimates, so the replay demonstrates the
+promotion mechanism, not a detectable regression. A gate that separates a real
+regression from noise needs a larger holdout or a significance rule.
+
+Full arc (every failed run, the leak, the fix, the ratio sweep, the gate) in
 [`docs/finetuning-results.md`](docs/finetuning-results.md).
 
 ---
@@ -287,7 +347,7 @@ Full arc — every failed run, the leak, the fix, the ratio sweep, the gate — 
 |---|---|
 | **v0.1** | RAG + agent with tools + FastAPI + README/diagram ✅ |
 | **v0.2** | *evals* in CI + guardrails ✅ |
-| **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison on a held-out set; **5-abstention adapter promoted** via the gate, 10-abstention variant auto-rejected for regressing citation accuracy ✅ |
+| **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison on a 28-question held-out set; **5-abstention adapter promoted** via the gate, 10-abstention variant rejected on a citation drop (18/22 → 14/22) that is within noise at this n ✅ |
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
 | **v0.5** ← current | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
 
