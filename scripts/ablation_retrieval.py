@@ -6,6 +6,11 @@ reproduces bit-for-bit on any machine with no model and no network. This is the
 evidence behind the default ``retrieval_mode`` in ``anchora.config`` — if a
 mode change is proposed, this script is the referee.
 
+Every cell carries its sample size and a 95% interval (Wilson for recall, a
+seeded bootstrap for the per-question means), and ``--markdown`` adds the exact
+paired McNemar test on recall between hybrid and each single mode. On 22
+held-out questions a one- or two-question difference is not distinguishable.
+
 Usage::
 
     uv run python scripts/ablation_retrieval.py             # aligned table
@@ -22,6 +27,7 @@ from typing import Any
 
 from anchora.ingest import ingest_dir
 from anchora.rag import retrieve
+from anchora.stats import format_mean, format_proportion, mcnemar_exact
 from anchora.store import VectorStore
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -33,7 +39,7 @@ _MODES = ("dense", "bm25", "hybrid")
 _K = 4
 
 
-@dataclass
+@dataclass(frozen=True)
 class ModeScore:
     mode: str
     dataset: str
@@ -41,6 +47,9 @@ class ModeScore:
     recall: float
     precision: float
     mrr: float
+    hits: tuple[bool, ...] = ()
+    precisions: tuple[float, ...] = ()
+    reciprocal_ranks: tuple[float, ...] = ()
 
 
 def _load_cases(path: Path) -> list[dict[str, Any]]:
@@ -69,6 +78,9 @@ def _score_mode(store: VectorStore, cases: list[dict[str, Any]], mode: str, name
         recall=_mean(recalls),
         precision=_mean(precisions),
         mrr=_mean(reciprocal_ranks),
+        hits=tuple(r == 1.0 for r in recalls),
+        precisions=tuple(precisions),
+        reciprocal_ranks=tuple(reciprocal_ranks),
     )
 
 
@@ -80,7 +92,7 @@ def run() -> list[ModeScore]:
     store = ingest_dir(_CORPUS_DIR, provider=_PROVIDER)
     datasets = (
         ("golden (train, n=24)", _load_cases(_GOLDEN_PATH)),
-        ("holdout (unseen)", _load_cases(_HOLDOUT_PATH)),
+        ("holdout (unseen, n=22)", _load_cases(_HOLDOUT_PATH)),
     )
     return [_score_mode(store, cases, mode, name) for name, cases in datasets for mode in _MODES]
 
@@ -92,13 +104,37 @@ def print_plain(scores: list[ModeScore]) -> None:
         print(f"{s.dataset:<22} {s.mode:<8} {s.recall:>9.3f} {s.precision:>12.3f} {s.mrr:>7.3f}")
 
 
+def recall_mcnemar(a: ModeScore, b: ModeScore) -> tuple[int, int, float]:
+    """Paired exact McNemar on recall@k between two modes on the same questions."""
+    if a.dataset != b.dataset or len(a.hits) != len(b.hits):
+        raise ValueError(f"cannot pair {a.dataset}/{a.mode} with {b.dataset}/{b.mode}")
+    only_a = sum(x and not y for x, y in zip(a.hits, b.hits, strict=True))
+    only_b = sum(y and not x for x, y in zip(a.hits, b.hits, strict=True))
+    return only_a, only_b, mcnemar_exact(only_a, only_b)
+
+
 def print_markdown(scores: list[ModeScore]) -> None:
-    print("| Dataset | Mode | Recall@4 | Precision@4 | MRR@4 |")
-    print("|---|---|---:|---:|---:|")
+    print(
+        "| Dataset | Mode | Recall@4 (k/n, Wilson 95%) "
+        "| Precision@4 (mean, 95%) | MRR@4 (mean, 95%) |"
+    )
+    print("|---|---|---|---|---|")
     for s in scores:
         bold = s.mode == "hybrid"
         mode = f"**{s.mode}**" if bold else s.mode
-        print(f"| {s.dataset} | {mode} | {s.recall:.3f} | {s.precision:.3f} | {s.mrr:.3f} |")
+        recall = format_proportion(sum(s.hits), s.n_cases)
+        precision = format_mean(s.precisions)
+        mrr = format_mean(s.reciprocal_ranks)
+        print(f"| {s.dataset} | {mode} | {recall} | {precision} | {mrr} |")
+    print()
+    print("| Dataset | Pair (recall@4) | Only hybrid hit | Only other hit | McNemar exact p |")
+    print("|---|---|---:|---:|---:|")
+    by_key = {(s.dataset, s.mode): s for s in scores}
+    for dataset in dict.fromkeys(s.dataset for s in scores):
+        hybrid = by_key[(dataset, "hybrid")]
+        for other in ("dense", "bm25"):
+            only_h, only_o, p = recall_mcnemar(hybrid, by_key[(dataset, other)])
+            print(f"| {dataset} | hybrid vs {other} | {only_h} | {only_o} | {p:.3f} |")
 
 
 def main(argv: list[str] | None = None) -> int:
