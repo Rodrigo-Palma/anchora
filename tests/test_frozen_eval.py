@@ -20,6 +20,7 @@ import gate_promotion as gp  # noqa: E402
 import score_generations as sg  # noqa: E402
 
 from anchora.registry import ModelRegistry  # noqa: E402
+from anchora.stats import mcnemar_exact  # noqa: E402
 
 _TOL = 0.01
 
@@ -58,3 +59,30 @@ def test_lora10_regresses_citation_accuracy(tmp_path: Path) -> None:
 def test_lora5_beats_base_fewshot_on_citation_accuracy() -> None:
     results = sg.score_all()
     assert results["lora5"]["citation_accuracy"] > results["base_fewshot"]["citation_accuracy"]
+
+
+def test_report_counts_match_documented_fractions() -> None:
+    """The documented rates are these exact counts: 18/22, 5/6, 11/22, 1/6, 14/22."""
+    per_case = sg.score_all_cases()
+    lines = "\n".join(sg.report_lines(per_case))
+    assert "| lora5 | 18/22 = 0.818 [0.61, 0.93] | 5/6 = 0.833 [0.44, 0.97]" in lines
+    assert "| base_fewshot | 11/22 = 0.500 [0.31, 0.69] | 1/6 = 0.167 [0.03, 0.56]" in lines
+    assert "| lora10 | 14/22 = 0.636 [0.43, 0.80]" in lines
+
+
+def test_paired_comparisons_match_the_documented_read() -> None:
+    """Pin the paired evidence the README states, so the prose cannot drift from it."""
+    per_case = sg.score_all_cases()
+
+    def p_value(a: str, b: str, field: str, answerable: bool) -> float:
+        only_a, only_b = sg.discordant_pairs(per_case[a], per_case[b], field, answerable)
+        return mcnemar_exact(only_a, only_b)
+
+    # The only nominally significant difference: lora5 vs base+few-shot citation (7 vs 0).
+    assert sg.discordant_pairs(
+        per_case["lora5"], per_case["base_fewshot"], "citation_correct", True
+    ) == (7, 0)
+    assert p_value("lora5", "base_fewshot", "citation_correct", True) < 0.05
+    # Abstention on 6 questions and the gate's lora10 rejection are within noise.
+    assert p_value("lora5", "base_fewshot", "abstained", False) > 0.05
+    assert p_value("lora5", "lora10", "citation_correct", True) > 0.05
