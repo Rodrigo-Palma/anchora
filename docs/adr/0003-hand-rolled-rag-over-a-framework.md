@@ -5,7 +5,7 @@ Date: 2026-06-23 · Status: Accepted
 ## Context
 
 LangChain/LlamaIndex accelerate a RAG prototype but hide the retrieval, chunking
-and grounding logic behind abstractions. For a portfolio project whose whole
+and grounding logic behind abstractions. For a project whose whole
 point is *measuring* retrieval and grounding, that opacity is a liability, and
 the heavy dependency tree works against the offline, deterministic-CI goal.
 
