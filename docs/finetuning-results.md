@@ -4,6 +4,30 @@ This page records the first local LoRA fine-tuning experiments for `anchora`.
 The goal was not to claim a production-quality adapter yet; it was to make the
 v0.3 claim measurable: **base model vs. tuned adapter on the same golden set**.
 
+## Reading the numbers
+
+- **Sample sizes are small.** Experiments A to F are scored on the 24 training
+  golden questions. The holdout sections use 22 answerable and 6 out-of-corpus
+  questions. Every rate below is written as `k/n` with a 95% Wilson interval;
+  per-question means carry a seeded 95% bootstrap interval; two models on the
+  same questions are compared with the exact paired McNemar test
+  (`uv run python scripts/score_generations.py --report`, `anchora.stats`).
+- **Experiments A to F are not reproducible from this repo.** Their outputs
+  live under the untracked `artifacts/`. The grounded-rate counts are recovered
+  from the rates (`k/24`); the faithfulness, relevance and overlap means have no
+  per-question data in the repo, so they carry no interval.
+- **The holdout sections are reproducible.** The decoded generations are frozen
+  in `data/eval/holdout-generations.json` and re-scored in CI. Two historical
+  columns (bracket-presence "grounded" and exact-English abstention) come from
+  an earlier version of the scorer; recounting the frozen strings with those
+  definitions gives the counts shown, but the current scorer does not compute
+  them.
+- **What n=22 and n=6 support**, in one line: the citation gain of the promoted
+  adapter over the few-shot baseline is the one paired difference this holdout
+  resolves (p = 0.016, not pre-registered, 0.094 after Bonferroni over six
+  comparisons); every abstention difference on 6 questions, and the 5-vs-10
+  citation gap behind the gate's rejection, are within noise.
+
 ## Setup
 
 | Item | Value |
@@ -47,8 +71,8 @@ Result:
 
 | Model | Grounded rate | Faithfulness | Answer relevance |
 |---|---:|---:|---:|
-| Base | 0.3750 | 0.2866 | 0.2036 |
-| LoRA | 0.0833 | 0.3185 | 0.3524 |
+| Base | 9/24 = 0.375 [0.21, 0.57] | 0.2866 | 0.2036 |
+| LoRA | 2/24 = 0.083 [0.02, 0.26] | 0.3185 | 0.3524 |
 
 Interpretation: the adapter improved content overlap, but it failed the main
 RAG requirement: cite or abstain. It should **not** be promoted.
@@ -69,8 +93,8 @@ Result:
 
 | Model | Grounded rate | Faithfulness | Answer relevance |
 |---|---:|---:|---:|
-| Base | 0.3750 | 0.2866 | 0.2036 |
-| LoRA | 0.0000 | 0.0000 | 0.0000 |
+| Base | 9/24 = 0.375 [0.21, 0.57] | 0.2866 | 0.2036 |
+| LoRA | 0/24 = 0.000 [0.00, 0.14] | 0.0000 | 0.0000 |
 
 Interpretation: this run became unstable after epoch 6 (`grad_norm=nan`) and
 collapsed at evaluation time. It is a useful failed experiment, not a candidate.
@@ -92,8 +116,8 @@ Result:
 
 | Model | Grounded rate | Faithfulness | Answer relevance |
 |---|---:|---:|---:|
-| Base | 0.3750 | 0.2866 | 0.2036 |
-| LoRA | 0.2083 | 0.3155 | 0.2083 |
+| Base | 9/24 = 0.375 [0.21, 0.57] | 0.2866 | 0.2036 |
+| LoRA | 5/24 = 0.208 [0.09, 0.40] | 0.3155 | 0.2083 |
 
 Interpretation: this was stable and improved faithfulness slightly, but still
 reduced grounded/cited outputs. It should **not** be promoted yet.
@@ -115,12 +139,13 @@ Result:
 
 | Model | Grounded rate | Faithfulness | Answer relevance |
 |---|---:|---:|---:|
-| Base | 0.2083 | 0.3121 | 0.4647 |
-| LoRA | 0.2917 | 0.2844 | 0.4552 |
+| Base | 5/24 = 0.208 [0.09, 0.40] | 0.3121 | 0.4647 |
+| LoRA | 7/24 = 0.292 [0.15, 0.49] | 0.2844 | 0.4552 |
 
 Interpretation: the larger base model is a better benchmark than the `0.5B`
-smoke test. The LoRA adapter improved the production-critical citation/grounding
-rate, but it reduced faithfulness. This is useful evidence, but it is still not
+smoke test. The LoRA grounded rate went from 5/24 to 7/24, a 2-question change
+with overlapping intervals, so it is not evidence of improvement, and
+faithfulness went down. This is useful evidence, but it is still not
 a promotion candidate.
 
 ### Experiment E — larger base model, lower LR
@@ -140,8 +165,8 @@ Result:
 
 | Model | Grounded rate | Faithfulness | Answer relevance |
 |---|---:|---:|---:|
-| Base | 0.2083 | 0.3121 | 0.4647 |
-| LoRA | 0.2083 | 0.2726 | 0.4364 |
+| Base | 5/24 = 0.208 [0.09, 0.40] | 0.3121 | 0.4647 |
+| LoRA | 5/24 = 0.208 [0.09, 0.40] | 0.2726 | 0.4364 |
 
 Interpretation: the lower learning rate was stable, but it did not improve
 grounding and reduced both faithfulness and answer relevance. It should not be
@@ -173,8 +198,8 @@ Result (`max_new_tokens=48`):
 
 | Model | Grounded rate | Faithfulness | Answer relevance | Reference overlap |
 |---|---:|---:|---:|---:|
-| Base | 0.1667 | 0.2668 | 0.8376 | 0.1668 |
-| LoRA | 0.9167 | 0.9208 | 0.0458 | 0.7338 |
+| Base | 4/24 = 0.167 [0.07, 0.36] | 0.2668 | 0.8376 | 0.1668 |
+| LoRA | 22/24 = 0.917 [0.74, 0.98] | 0.9208 | 0.0458 | 0.7338 |
 
 Interpretation: this is the first strong LoRA result. The tuned adapter produces
 short Portuguese legal answers with citations and much higher faithfulness. The
@@ -212,7 +237,7 @@ v0.3 result is:
 The most important thing I learned here is not the 0.92. It is that **the 0.92
 is not trustworthy as stated**. `build_finetune_dataset.py` builds the training
 data from the golden set, and the Experiment F table above was scored on *that
-same golden set*. Train == test. So the jump from 0.17 to 0.92 largely measures
+same golden set*. Train == test. So the jump from 0.17 to 0.92 (4/24 to 22/24) largely measures
 **memorization of 24 answers**, not generalization. Two related caveats compound
 it: `reference_overlap` compares the answer against the very gold string the
 model was trained to reproduce (near-tautological on the training split), and
@@ -250,11 +275,12 @@ single token is generated:
 
 | Split | Retrieval recall | Notes |
 |---|---:|---|
-| Golden (train, 24 q) | **1.000** | the EN→PT glossary bridge is hand-fit to these questions |
-| Holdout (new, 22 q)  | **0.864** | 3 misses where the bridge does not generalize |
+| Golden (train, 24 q) | **24/24 = 1.000** [0.86, 1.00] | the EN→PT glossary bridge is hand-fit to these questions |
+| Holdout (new, 22 q)  | **19/22 = 0.864** [0.67, 0.95] | 3 misses where the bridge does not generalize |
 
-That 1.000 → 0.864 drop is the honest cost the perfect-recall CI gate was hiding.
-It is itself a finding worth reporting.
+The intervals overlap, so 22 questions do not establish a recall drop; what
+they do show is 3 concrete misses the perfect-recall CI gate could never
+surface, because it only asks the questions the glossary was fit to.
 
 ### Run the honest comparison
 
@@ -276,141 +302,141 @@ itself."* Either is a stronger signal than a memorized 0.92.
 
 ### Results on the holdout (actual, `Qwen2.5-1.5B`, `max_new_tokens=48`)
 
-Scored on the 22 answerable + 6 out-of-corpus held-out questions:
+Scored on the 22 answerable + 6 out-of-corpus held-out questions. Grounded and
+abstention here use the original definitions (a `[n]` bracket or the exact
+English refusal counts as grounded; only the exact English refusal counts as
+abstention):
 
-| Row | Grounded ↑ | Faithfulness ↑ | Ref. overlap ↑ | Abstention ↑ |
-|---|---:|---:|---:|---:|
-| base (zero-shot)   | 0.227 | 0.204 | 0.138 | 0.000 |
-| base + few-shot    | 0.636 | 0.197 | 0.237 | 0.167 |
-| **LoRA**           | **0.864** | **0.789** | **0.519** | **0.000** |
+| Row | Grounded ↑ (n=22) | Faithfulness ↑ (n=22) | Ref. overlap ↑ (n=22) | Abstention ↑ (n=6) |
+|---|---|---|---|---|
+| base (zero-shot)   | 5/22 = 0.227 [0.10, 0.43] | 0.204 [0.15, 0.26] | 0.138 [0.06, 0.24] | 0/6 [0.00, 0.39] |
+| base + few-shot    | 14/22 = 0.636 [0.43, 0.80] | 0.197 [0.14, 0.26] | 0.237 [0.12, 0.38] | 1/6 [0.03, 0.56] |
+| **LoRA**           | **19/22 = 0.864 [0.67, 0.95]** | **0.789 [0.64, 0.92]** | **0.519 [0.36, 0.68]** | **0/6 [0.00, 0.39]** |
 
-*(`answer_relevance` omitted — same EN-question-vs-PT-answer proxy artifact as
-before: base 0.84 → LoRA 0.09.)*
+*(`answer_relevance` omitted: same EN-question-vs-PT-answer proxy artifact as
+before, base 0.84 → LoRA 0.09.)*
 
-**The win survives the fair test — with one important asterisk.**
+What 22 and 6 questions support:
 
-1. **Fine-tuning taught real behavior, not just format.** Few-shot prompting
-   closes much of the *grounding* gap on its own (0.23 → 0.64), confirming part
-   of the earlier headline was format conformance. But on **faithfulness** it
-   does nothing (0.20 → 0.20), while the LoRA jumps to **0.79**. Few-shot can't
-   buy that — the adapter genuinely learned to answer from context.
+1. **Few-shot closes part of the grounding gap on its own** (5/22 → 14/22, with
+   intervals that barely overlap), so part of the earlier headline was format
+   conformance. On faithfulness few-shot does nothing (0.20 → 0.20) while the
+   LoRA reaches 0.79, and those bootstrap intervals do not overlap. Faithfulness
+   is a token-overlap proxy, so this says the adapter's answers reuse context
+   tokens, not that they are correct.
+2. **Reference overlap** on unseen answers is 0.52 [0.36, 0.68] for the LoRA vs
+   0.24 [0.12, 0.38] for few-shot: higher, with intervals touching. The earlier
+   0.73 was inflated by train == test.
+3. **The holdout exposed a failure mode the leaked eval could not show:** the
+   LoRA refused 0 of the 6 out-of-corpus questions. It fabricated answers *with
+   fake citations*, e.g. *"Três anos. [1]"* for the homicide statute of
+   limitations, *"6 pontos. [1]"* for license points. Few-shot refused 1 of 6;
+   on 6 questions that difference means nothing, but 0/6 fabrications with
+   citations are concrete failures. The cause is visible in the data: the
+   training set contained **zero abstention examples**, so the adapter learned
+   "always answer and append a bracket."
 
-2. **It generalizes.** These reference answers were never trained on, yet the
-   LoRA's reference_overlap (0.52) is far above base+few-shot (0.24). The earlier
-   0.73 was inflated by train==test, but the real, unseen-data number still wins
-   clearly. The adapter learned a skill, it did not just memorize 24 answers.
+**Net:** a measured gain on in-corpus faithfulness (proxy) and a visible failure
+on out-of-corpus questions. The second is what the first eval could not report,
+and it set the next step: put abstention cases in the training data.
 
-3. **The holdout exposed a real failure mode the leaked eval could never show:
-   the LoRA never abstains** (abstention 0.000). On out-of-corpus questions it
-   confidently fabricates answers *with fake citations* — e.g. *"Três anos. [1]"*
-   for the homicide statute of limitations, *"6 pontos. [1]"* for license points.
-   The base+few-shot model at least refuses sometimes (0.167). Cause is obvious in
-   hindsight: the training set contains **zero abstention examples**, so the
-   adapter learned the rule *"always answer and append a bracket."* It optimized
-   exactly what it was shown.
-
-**Net:** the adapter is a real, measurable improvement on in-corpus grounding and
-faithfulness — and a measurable *regression* on knowing when to shut up. That
-second sentence is the one the first eval was structurally incapable of telling
-me, and it sets the next iteration's top priority: put abstention cases in the
-training data.
-
-### Closing the loop — re-training with abstention (v0.3.2)
+### Closing the loop: re-training with abstention (v0.3.2)
 
 I added 10 out-of-corpus questions to the training set (`data/finetune/
 abstention_train.json`, completion = the refusal sentence, no citation; disjoint
 from the 6 held-out abstention cases) and re-ran the same recipe. Same holdout,
-same fair baselines:
+same baselines, same original definitions:
 
-| Row | Grounded ↑ | Abstention ↑ | Faithfulness ↑ | Ref. overlap ↑ |
-|---|---:|---:|---:|---:|
-| base + few-shot         | 0.636 | 0.167 | 0.197 | 0.237 |
-| LoRA (answerable-only)  | 0.864 | 0.000 | **0.789** | **0.519** |
-| **LoRA + abstention**   | 0.864 | **0.500** | 0.658 | 0.394 |
+| Row | Grounded ↑ (n=22) | Abstention ↑ (n=6) | Faithfulness ↑ (n=22) | Ref. overlap ↑ (n=22) |
+|---|---|---|---|---|
+| base + few-shot         | 14/22 = 0.636 [0.43, 0.80] | 1/6 [0.03, 0.56] | 0.197 [0.14, 0.26] | 0.237 [0.12, 0.38] |
+| LoRA (answerable-only)  | 19/22 = 0.864 [0.67, 0.95] | 0/6 [0.00, 0.39] | 0.789 [0.64, 0.92] | 0.519 [0.36, 0.68] |
+| **LoRA + abstention**   | 19/22 = 0.864 [0.67, 0.95] | 3/6 = 0.500 [0.19, 0.81] | 0.658 [0.47, 0.83] | 0.394 [0.24, 0.56] |
 
-**The fix works, and it costs something — both worth stating plainly.**
+* **Exact-English refusals went from 0/6 to 3/6.** The confident fake citations
+  on those questions are gone: *"Três anos. [1]"* for the homicide statute became
+  *"I could not find this information in the provided documents."* With 6
+  questions the intervals overlap; this is a change in observed behavior, not a
+  measured rate.
+* **The exact-English check undercounts.** The adapter also refuses *in
+  Portuguese* (*"Não há uma data específica…"*, *"Nenhum dado foi fornecido"*),
+  which this check scores as a miss. That motivated the PT-aware detection below.
+* **A possible cost on answerable questions:** faithfulness 0.79 → 0.66 and
+  reference overlap 0.52 → 0.39. Both pairs of intervals overlap, so 22
+  questions do not establish the cost; it is the expected direction for a model
+  taught to hedge, and the reason the abstention ratio was swept next.
 
-* **Abstention 0.000 → 0.500** on unseen out-of-corpus questions, with grounding
-  on answerable cases **unchanged (0.864)**. 10 refusal examples were enough to
-  teach "say no" without unlearning "cite." The confident fake citations are
-  gone: *"Três anos. [1]"* for the homicide statute became *"I could not find
-  this information in the provided documents."*
-* **The measured 0.500 understates the real behavior change.** The metric demands
-  the exact English refusal sentence, but the adapter now also refuses *in
-  Portuguese* — *"Não há uma data específica…"*, *"Nenhum dado foi fornecido"* —
-  which scores as a miss. So the true rate of "stopped fabricating" is higher than
-  0.500. (This is exactly why rec #3, a citation-correctness metric, is next.)
-* **The cost is real: faithfulness 0.79 → 0.66, reference overlap 0.52 → 0.39.**
-  A model taught to sometimes refuse gets more hedged on answerable questions too
-  — a classic precision/abstention tradeoff. At a 10/34 (~29%) abstention ratio
-  the trade leans a bit far toward caution; the next knob to turn is that ratio,
-  not the model size.
-
-In one sentence: the first 0.92 was measured on the training set; a held-out eval
-and a few-shot baseline showed the real gain was smaller but genuine, exposed that
-the adapter never abstained, and the abstention fix traded a measured amount of
-answer precision for refusing half the out-of-corpus questions.
-
-### Measuring the right thing (rec #3) — two metrics that move in opposite directions
+### Measuring the right thing (rec #3): two metrics that move in opposite directions
 
 `grounded_rate` only asks "is a `[n]` present?" and the exact-English abstention
 check only matches one sentence. Both mis-measure real behavior. I added
 `metrics.citation_correct` (does the cited index resolve to the *expected*
 document?) and `guardrails.is_abstention` (recognize Portuguese refusals too), and
-re-scored the existing run outputs — no re-generation needed, retrieval is
+re-scored the existing run outputs. No re-generation was needed; retrieval is
 deterministic.
 
-| Adapter | Grounded (bracket present) | **Citation-correct** | Abstention (exact EN) | **Abstention (PT-aware)** |
-|---|---:|---:|---:|---:|
-| base + few-shot          | 0.636 | 0.500 | 0.167 | 0.167 |
-| LoRA (answerable-only)   | 0.864 | 0.773 | 0.000 | 0.167 |
-| LoRA + abstention        | 0.864 | **0.636** | 0.500 | **0.833** |
+| Adapter | Grounded, bracket or exact refusal (n=22) | **Citation-correct** (n=22) | Abstention, exact EN (n=6) | **Abstention, PT-aware** (n=6) |
+|---|---|---|---|---|
+| base + few-shot          | 14/22 [0.43, 0.80] | 11/22 = 0.500 [0.31, 0.69] | 1/6 [0.03, 0.56] | 1/6 = 0.167 [0.03, 0.56] |
+| LoRA (answerable-only)   | 19/22 [0.67, 0.95] | 17/22 = 0.773 [0.57, 0.90] | 0/6 [0.00, 0.39] | 1/6 = 0.167 [0.03, 0.56] |
+| LoRA + abstention        | 19/22 [0.67, 0.95] | **14/22 = 0.636** [0.43, 0.80] | 3/6 [0.19, 0.81] | **5/6 = 0.833** [0.44, 0.97] |
 
-Two honest corrections, pointing opposite ways:
+Two corrections, pointing opposite ways:
 
-* **Grounding was optimistic.** A chunk of the 0.864 "grounded" was a bracket
-  pointing at the *wrong* document. Real citation accuracy is **0.64–0.77**, and
-  the abstention-trained adapter pays more here (0.636) because it hedges more.
-  Still clearly above base+few-shot (0.500) — the win survives the stricter metric.
-* **Abstention was pessimistic.** The exact-English check scored the
-  abstention-trained adapter at 0.500, but it actually refuses **5 of 6**
-  out-of-corpus questions (0.833) — it just does so in Portuguese. The fix worked
-  far better than the first metric admitted.
+* **Bracket presence was optimistic.** Part of the 19/22 "grounded" was a
+  bracket pointing at the *wrong* document; citation-correct is 14/22 to 17/22
+  for the adapters. Against base+few-shot (11/22) the answerable-only adapter is
+  right on 7 questions the baseline misses and the reverse happens once
+  (paired p = 0.070): suggestive, not established at n=22.
+* **Exact-English abstention was pessimistic.** The abstention-trained adapter
+  refuses 5 of 6 out-of-corpus questions once Portuguese refusals count. The
+  intervals for 5/6 and 1/6 overlap, and on 6 questions no paired test can go
+  below p = 0.031.
 
-The net, under metrics that measure what they claim to: the abstention-trained
-adapter beats base+few-shot on **both** honest grounding (0.64 vs 0.50) **and**
-abstention (0.83 vs 0.17). That is the defensible v0.3 result.
+### Tuning the abstention ratio: 5 vs 10
 
-### Tuning the abstention ratio — 5 beats 10
+The 10/34 (~29%) abstention mix looked like it cost answer quality. So I swept
+the ratio: same recipe, 5 abstention examples (`--max-abstention 5`, 17%)
+instead of 10. Scored on the holdout with the current metrics:
 
-The 10/34 (~29%) abstention mix bought refusal at a real cost to answer quality.
-So I swept the ratio: same recipe, but 5 abstention examples (`--max-abstention 5`,
-17%) instead of 10. Scored on the holdout with the honest metrics:
+| Adapter | Citation-correct ↑ (n=22) | Faithfulness ↑ (n=22) | Ref. overlap ↑ (n=22) | Abstention, PT ↑ (n=6) |
+|---|---|---|---|---|
+| LoRA (0 abstention)     | 17/22 = 0.773 [0.57, 0.90] | **0.789** [0.64, 0.92] | **0.519** [0.36, 0.68] | 1/6 = 0.167 [0.03, 0.56] |
+| **LoRA + 5 abstention** | **18/22 = 0.818** [0.61, 0.93] | 0.726 [0.55, 0.88] | 0.457 [0.29, 0.62] | **5/6 = 0.833** [0.44, 0.97] |
+| LoRA + 10 abstention    | 14/22 = 0.636 [0.43, 0.80] | 0.658 [0.47, 0.83] | 0.394 [0.24, 0.56] | 5/6 = 0.833 [0.44, 0.97] |
 
-| Adapter | Citation-correct ↑ | Faithfulness ↑ | Ref. overlap ↑ | Abstention (PT) ↑ |
-|---|---:|---:|---:|---:|
-| LoRA (0 abstention)    | 0.773 | **0.789** | **0.519** | 0.167 |
-| **LoRA + 5 abstention** | **0.818** | 0.726 | 0.457 | **0.833** |
-| LoRA + 10 abstention   | 0.636 | 0.658 | 0.394 | 0.833 |
+Paired exact McNemar on the same questions:
 
-**Five is the sweet spot, and it dominates ten on every axis.** Five abstention
-examples deliver the *full* abstention gain (0.833 — same as ten) while
-**improving** citation accuracy over even the answerable-only adapter (0.818 vs
-0.773) and recovering most of the faithfulness ten had thrown away. Ten examples
-over-taught caution: the model hedged on answerable questions too, dragging
-citation accuracy down to 0.636.
+| Comparison | Metric | Only A right | Only B right | p |
+|---|---|---:|---:|---:|
+| LoRA+5 vs LoRA+0  | citation-correct | 1 | 0 | 1.000 |
+| LoRA+5 vs LoRA+0  | abstention (PT) | 4 | 0 | 0.125 |
+| LoRA+5 vs LoRA+10 | citation-correct | 5 | 1 | 0.219 |
+| LoRA+5 vs base+few-shot | citation-correct | 7 | 0 | 0.016 |
+| LoRA+5 vs base+few-shot | abstention (PT) | 4 | 0 | 0.125 |
 
-The residual cost vs. the 0-abstention adapter is small (faithfulness 0.789 →
-0.726, overlap 0.519 → 0.457) and clearly worth it: you trade ~6 points of answer
-overlap for a +0.67 jump in knowing when to refuse. **`LoRA + 5 abstention` is the
-promotion candidate** — `data/finetune/instructions-abstention5.jsonl`,
-`artifacts/lora-anchora-qwen15b-abstention5-lr1e4-e30`.
+**What the sweep shows at this n.** Five and ten examples refuse equally often
+(5/6). Five cites the right document on 18/22 and ten on 14/22, a gap of 5
+questions lost and 1 gained (p = 0.219), so the sweep does not show five beating
+ten; it shows no advantage for ten. Against the answerable-only adapter, five
+costs nothing measurable on citation (1 question) and moves abstention from 1/6
+to 5/6 (p = 0.125). The faithfulness and overlap differences between the three
+adapters all have overlapping intervals.
+
+**`LoRA + 5 abstention` is the promotion candidate** because it is never worse on
+a point estimate and is the smaller dose:
+`data/finetune/instructions-abstention5.jsonl`,
+`artifacts/lora-anchora-qwen15b-abstention5-lr1e4-e30`. Against the few-shot
+baseline its citation gain is the one difference this holdout resolves
+(7 vs 0 discordant, p = 0.016; not pre-registered, 0.094 after Bonferroni over
+the six comparisons `--report` prints).
 
 Lesson worth keeping: the fix (teach abstention) and its dosage (how much) are two
 separate decisions. The first needs a held-out eval to even see; the second needs
-a sweep. Neither is visible from a single train==test number.
+a sweep, and a sweep needs enough questions to separate its arms. Six
+out-of-corpus questions are not enough.
 
-### Closing the MLOps loop — promote on honest metrics, with a gate
+### Closing the MLOps loop: promote on held-out metrics, with a gate
 
 `scripts/register_finetune.py` writes each adapter's *held-out* metrics into the
 model registry and promotes to `prod` only if it does not regress on a gate of
@@ -424,11 +450,14 @@ REJECTED anchora-qa:v0.3-lora10: regressed on citation_accuracy 0.818->0.636;
          keeping anchora-qa:v0.3-lora5 in prod.
 ```
 
-The gate does exactly what the headline 0.92 could never do: it **rejects** the
-over-cautious 10-abstention adapter automatically, because the promotion rule is
-written against metrics that measure real behavior on unseen data. Final prod:
-`v0.3-lora5`. (The registry file lives under `artifacts/` and is not tracked; the
-capability is the code and the gate, not the JSON.)
+The gate compares point estimates. The rejection of `lora10` is 18/22 → 14/22,
+5 questions lost and 1 gained (paired p = 0.219), which is within noise on 22
+questions. So the replay shows the mechanism (a regression rule wired to
+held-out metrics, enforced by code and replayed in CI); it does not show the gate
+detecting a real regression. Making it able to do that needs a larger holdout or
+a rule that requires the drop to be significant. Final prod: `v0.3-lora5`. (The
+registry file lives under `artifacts/` and is not tracked; the capability is the
+code and the gate, not the JSON.)
 
 ### Frozen so it runs in CI — no GPU, no network
 
@@ -452,34 +481,37 @@ model outputs, not invented numbers) and re-scored deterministically:
 make eval-honest   # score_generations.py --check && gate_promotion.py
 ```
 
-`tests/test_frozen_eval.py` runs the same checks in the suite, and CI runs
+`scripts/score_generations.py --report` prints the counts, intervals and
+paired tests used in this document. `tests/test_frozen_eval.py` runs the same
+checks in the suite (including the paired read), and CI runs
 `make eval-honest`, so the fine-tuning table is a build-time invariant rather than
 a claim about a run that happened once on my laptop.
 
 ## Next Iteration
 
-Reordered — a defensible eval comes before a bigger model. Item 1 is done (see
-the holdout results above); the failure it surfaced sets the new top priority:
+A defensible eval comes before a bigger model. Status, with what each step
+showed at its sample size:
 
-1. ✅ **Run the holdout + few-shot comparison** — done. LoRA wins on grounding and
-   faithfulness over unseen data; never abstains.
-2. ✅ **Teach abstention** — done. Abstention 0.000 → 0.500 with grounding held,
-   at a measured cost to faithfulness/overlap. Next sub-step: **tune the abstention
-   ratio** (try ~5/29 instead of 10/34) to recover answer precision.
-3. ✅ **Citation-correctness metric + Portuguese refusal detection** — done.
-   Real citation accuracy is 0.64–0.77 (not the 0.86 bracket-presence number);
-   real abstention after training is 0.83 (not 0.50). The adapter still wins on
-   both honest metrics.
-4. ✅ **Tune the abstention ratio** — done. 5/29 (17%) dominates 10/34: full
-   abstention (0.833) with better citation accuracy (0.818) and most faithfulness
-   recovered. `LoRA + 5 abstention` is the promotion candidate.
-5. Only then scale training data (200–500 synthetic, source-grounded records),
-   keeping the holdout strictly separate — and re-sweep the abstention ratio at
-   the new scale.
-6. ✅ A promotion rule wired to the honest metrics: `register_finetune.py` +
+1. ✅ **Holdout + few-shot comparison.** The answerable-only LoRA cited a bracket
+   on 19/22 vs 14/22 for few-shot and refused 0/6 out-of-corpus questions.
+2. ✅ **Teach abstention.** Exact-English refusals 0/6 → 3/6 with grounding held
+   at 19/22; the faithfulness and overlap drops have overlapping intervals.
+3. ✅ **Citation-correctness metric + Portuguese refusal detection.**
+   Citation-correct is 14/22 to 18/22 across adapters (not the 19/22
+   bracket-presence count); PT-aware abstention after training is 5/6.
+4. ✅ **Abstention ratio.** 5 and 10 examples both refuse 5/6; citation 18/22 vs
+   14/22 (p = 0.219). No advantage for 10, so 5 is the candidate.
+5. **Grow the holdout before drawing finer conclusions.** With 6 out-of-corpus
+   questions no paired test can go below p = 0.031, and on 22 answerable
+   questions a 4-question gap is within noise. Both sets need to be several times
+   larger for the abstention effect or the gate to mean anything statistically.
+6. Then scale training data (200 to 500 synthetic, source-grounded records),
+   keeping the holdout strictly separate, and re-sweep the abstention ratio at the
+   new scale.
+7. ✅ A promotion rule wired to the held-out metrics: `register_finetune.py` +
    `registry.regressions` promote to prod only if neither citation accuracy nor
-   abstention regresses. It auto-rejected the 10-abstention adapter; prod is
-   `v0.3-lora5`.
+   abstention drops. It rejected the 10-abstention adapter on a point estimate;
+   prod is `v0.3-lora5`. A significance-aware rule is open.
 
 Deliberately **not** on the list: a larger base model (`Qwen2.5-3B`). A bigger
 model on a leaked eval is the same problem with more GPU. Fix the methodology
