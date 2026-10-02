@@ -19,8 +19,14 @@ experiments are re-scored as they ran.
 
 ## Consequences
 
-- Measured in `scripts/ablation_retrieval.py`: on the unseen holdout, hybrid
-  reaches BM25-level recall (0.909) while beating dense on MRR (0.909 vs 0.833).
-- The default is backed by an ablation table, not intuition — re-run it before
-  changing the default.
+- Measured in `scripts/ablation_retrieval.py` on the 22 answerable holdout
+  questions: recall@4 is 20/22 for hybrid and BM25 (Wilson 95% [0.72, 0.97]) and
+  19/22 for dense ([0.67, 0.95]). Hybrid and BM25 miss the same 2 questions;
+  hybrid vs dense differs on 1 question (paired McNemar p = 1.0). MRR is 0.909
+  [0.77, 1.00] for hybrid vs 0.833 [0.68, 0.95] for dense, intervals overlapping.
+  BM25 has the highest precision@4 (0.542 [0.41, 0.68] vs 0.386 [0.32, 0.45]).
+- So the ablation does not show hybrid beating either mode at this n. The
+  default rests on the design argument in Context (rank fusion keeps BM25's exact
+  terms and dense's paraphrase tolerance) plus "no recall lost vs BM25 here".
+  Re-run the ablation, ideally on a larger holdout, before changing the default.
 - Two rankings per query; negligible at this corpus size, revisit at scale.

@@ -61,7 +61,9 @@ abstention short-circuits without embedding work when the similarity floor is of
 ## Consequences
 
 - `ood-008` is now handled offline and deterministically: the adversarial suite
-  reports `off_domain` **12/12** and drops from three documented gaps to two
+  reports `off_domain` **12/12** (Wilson 95% [0.76, 1.00]; a hand-written set, so
+  the interval describes these 12 probes only) and drops from three documented
+  gaps to two
   (`inj-012`, `jb-008`). The gate no longer carries a gap it could actually close.
 - Four PII-echo probes (`pii-001/005/007/008`) — "repeat my CPF", "echo this
   exactly" — now hit the abstain path (they carry no legal content after

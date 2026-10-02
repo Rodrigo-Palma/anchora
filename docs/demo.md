@@ -17,8 +17,8 @@ make check
 # ruff check . · ruff format --check . · mypy · pytest · anchora eval
 ```
 
-Expected: clean lint/format/types, **102 tests passing** (~91% coverage)
-and the eval *gate* green.
+Expected: clean lint/format/types, the full test suite passing, and the eval
+*gate* green.
 
 ## 2. RAG + citation
 
@@ -64,8 +64,10 @@ ls -lh store.json
 uv run anchora eval
 ```
 
-Expected: a metrics table (recall 1.00, faithfulness ~0.96) and
-`EVAL GATE PASSED`.
+Expected: a metrics table (recall 24/24, faithfulness ~0.96) and
+`EVAL GATE PASSED`. These are the 24 training golden questions answered by the
+extractive fallback, which quotes its own retrieved context, so a faithfulness
+near 1 is expected by construction; it checks the pipeline, not answer quality.
 
 ## 7. API
 
