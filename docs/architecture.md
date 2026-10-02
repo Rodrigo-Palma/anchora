@@ -6,7 +6,7 @@ Technical reference document. For an overview and usage, see the [README](../REA
 
 `anchora` is a domain RAG agent with tool use and deterministic guardrails.
 Every answer is **anchored** in the corpus: it either cites the source `[n]`,
-or it abstains. The system is **local-first** — embeddings and generation via
+or it abstains. The system is **local-first**: embeddings and generation via
 Ollama, with a deterministic `hash` embedding provider so that tests and CI run
 offline and reproducibly.
 
@@ -56,10 +56,10 @@ hash`.
 
 ### Why lexical proxies in the evals?
 
-The *gate* must be objective and reproducible on every build. Lexical proxies for
-faithfulness/recall provide a reliable floor with no cost or variance. LLM
-*judges* (DeepEval/RAGAS via Ollama) remain available locally for richer analysis
-— see `scripts/compare_evals.py`.
+The *gate* must be reproducible on every build. Lexical proxies for
+faithfulness/recall give a floor with no cost or variance. LLM *judges*
+(DeepEval/RAGAS via Ollama) remain available locally through
+`scripts/compare_evals.py`.
 
 ### Deterministic guardrails
 
@@ -71,7 +71,7 @@ Three layers, all LLM-free (therefore testable and free of cost):
 ### Dependency injection in FastAPI
 
 The API-key guard uses `dependencies=[Depends(require_api_key)]` on the route
-decorator (not as a function parameter — that would turn it into a query param
+decorator, not as a function parameter (that would turn it into a query param
 and cause a 422).
 
 ## MLOps (v0.3 / v0.4)

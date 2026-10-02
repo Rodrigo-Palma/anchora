@@ -19,7 +19,8 @@ answer fallback stand in for the models, so the whole pipeline runs offline.
 ## Consequences
 
 - Sensitive documents never leave the machine; no per-token cost.
-- CI needs no secrets and no network — see [ADR 1](0001-deterministic-lexical-proxies-in-ci.md).
-- The production embedding path is multilingual; the offline `hash` provider
-  needs an explicit EN→PT glossary bridge to keep retrieval honest without a
+- CI needs no secrets and no network (see [ADR 1](0001-deterministic-lexical-proxies-in-ci.md)).
+- The Ollama embedding path is multilingual; the offline `hash` provider
+  needs an explicit EN→PT glossary bridge to match English questions to the
+  Portuguese corpus without a
   model (see [ADR 3](0003-hand-rolled-rag-over-a-framework.md)).

@@ -1,10 +1,10 @@
-# Eval calibration — how far the cheap proxy tracks a real judge
+# Eval calibration: how far the lexical proxy tracks an LLM judge
 
 The CI gate scores RAG quality with **deterministic lexical proxies**
 (`anchora.metrics`) rather than an LLM judge, because a gate must be
 reproducible and free ([ADR 1](adr/0001-deterministic-lexical-proxies-in-ci.md)).
-That is only honest if we know where the proxy and a real judge disagree — so we
-measure it instead of assuming it.
+That trade is only acceptable if we know where the proxy and a judge disagree,
+so the disagreement is measured rather than assumed.
 
 ## How to run
 
@@ -24,21 +24,22 @@ unit-tested offline with an injected deterministic judge
 
 The proxy is token-overlap based, so by construction it cannot see:
 
-- **Negation** — "the deadline is *not* 10 days" overlaps the context as much as
+- **Negation**: "the deadline is *not* 10 days" overlaps the context as much as
   the correct claim; the judge catches the flipped meaning, the proxy does not.
-- **Paraphrase without shared tokens** — a correct answer worded with synonyms
+- **Paraphrase without shared tokens**: a correct answer worded with synonyms
   scores lower than it should. The EN→PT glossary bridge softens this but does
   not remove it.
-- **Numeric correctness** — "20 days" vs "30 days" are one token apart; the proxy
+- **Numeric correctness**: "20 days" vs "30 days" are one token apart; the proxy
   treats them as near-identical.
 
 ## How the design contains those blind spots
 
-- The proxy gates **retrieval recall** (near-binary and reliable) and provides a
+- The proxy gates **retrieval recall** (a binary per-question check) and provides a
   faithfulness *floor*, not a precise faithfulness score.
-- The honest fine-tune numbers use `citation_correct` (does `[n]` resolve to the
-  expected document?) and PT-aware abstention — signals overlap alone cannot fake.
-- The LLM judge is available for the richer read whenever depth is needed.
+- The held-out fine-tune numbers use `citation_correct` (does `[n]` resolve to
+  the expected document?) and PT-aware abstention, signals token overlap alone
+  cannot satisfy.
+- The LLM judge is available locally for a closer read.
 
-The proxy is a cheap, reproducible floor. Calibration is what keeps calling it a
-floor honest.
+The proxy is a cheap, reproducible floor; the calibration measures how far that
+floor can be trusted.

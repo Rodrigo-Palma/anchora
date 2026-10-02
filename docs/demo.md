@@ -1,8 +1,8 @@
-# Demo — anchora
+# Demo: anchora
 
 Reproducible end-to-end walkthrough. Everything below runs **offline** (provider
-`hash`, no LLM), so it requires neither Ollama nor a network connection — ideal
-for recording a GIF/asciinema or a quick walkthrough.
+`hash`, no LLM), so it requires neither Ollama nor a network connection, which also
+makes it suitable for recording a GIF/asciinema.
 
 ## 0. Setup
 
@@ -89,7 +89,7 @@ curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
 uv run python -m pipeline.ml_pipeline --dry-run
 ```
 
-Expected: the plan is printed — `build-dataset → finetune (SKIP) → eval-and-register`.
+Expected: the plan is printed, `build-dataset → finetune (SKIP) → eval-and-register`.
 
 ## With the local models (optional)
 

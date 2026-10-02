@@ -7,7 +7,7 @@ Date: 2026-06-25 · Status: Accepted
 The first LoRA adapter rarely abstained: on out-of-corpus questions it fabricated
 confident answers with fake citations (0/6 refusals under the exact-English check,
 1/6 under the later PT-aware one; 6 held-out out-of-corpus questions in total). Adding abstention
-examples to the training set fixes that — but too many teach the model to refuse
+examples to the training set fixes that, but too many teach the model to refuse
 answerable questions, trading one failure for another.
 
 ## Decision

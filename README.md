@@ -1,8 +1,8 @@
 # anchora
 
-> Domain RAG agent for **Brazilian legal-administrative texts** — answers with citations, tool use, *evals* in CI, guardrails, and LoRA *fine-tuning*. **100% local-first** (Ollama), with no paid APIs.
+> Domain RAG agent for **Brazilian legal-administrative texts**: cited answers, tool use, *evals* in CI, guardrails, and LoRA *fine-tuning*. Runs locally on Ollama; no paid APIs.
 
-`anchora` ("anchor") is an agent that **anchors** every answer in the source documents: it retrieves passages from the corpus, answers by citing the source `[n]`, and **refuses to make things up** — if the answer is not in the documents, it abstains. It goes beyond a simple RAG by **using tools** (search + legal deadline calculation) and by validating input and output with **deterministic guardrails**.
+`anchora` ("anchor") is an agent that **anchors** every answer in the source documents: it retrieves passages from the corpus, answers by citing the source `[n]`, and abstains when the answer is not in the documents. Besides retrieval it **calls tools** (search and legal deadline calculation) and checks input and output with **deterministic guardrails**.
 
 The domain is Brazilian public law: LAI, Lei 8.112, Defensoria Pública, LGPD, CPC deadlines, Lei 14.133 (procurement), Lei 9.784 (administrative procedure), and free legal aid.
 
@@ -12,42 +12,40 @@ The domain is Brazilian public law: LAI, Lei 8.112, Defensoria Pública, LGPD, C
 
 ![demo](docs/demo.gif)
 
-Everything above runs **offline** (`--provider hash --no-llm`) — the full
+Everything above runs **offline** (`--provider hash --no-llm`). The full
 walkthrough, including ingestion and the eval gate, is in
 [`docs/demo.md`](docs/demo.md).
 
-## What makes this more than a RAG demo
+## Scope
 
-Most RAG demos work on the happy path. The focus here is the opposite: **measuring
-when the system is wrong, and making it abstain instead of bluffing.** The
-engineering follows from that stance:
+The focus is **measuring when the system is wrong and making it abstain instead
+of answering.** Components:
 
-- **RAG + agent with tools** — retrieval plus `legal_deadline` calculation and
-  `search_documents`, not just "chat over a PDF";
-- **hybrid retrieval, measured** — BM25 + dense fused with Reciprocal Rank
+- **RAG + agent with tools**: retrieval plus `legal_deadline` calculation and
+  `search_documents`;
+- **hybrid retrieval, measured**: BM25 + dense fused with Reciprocal Rank
   Fusion, with an [ablation](#retrieval-hybrid-bm25--dense) against either mode
   alone (on 22 held-out questions the three modes are not distinguishable on
   recall);
-- **production guardrails, attacked on purpose** — anti-injection, PII redaction,
-  and a mandatory grounding check, verified by a
+- **rule-based guardrails, tested adversarially**: anti-injection, PII
+  redaction, and a mandatory grounding check, run against a
   [46-attack adversarial suite](#adversarial-guardrail-suite) (44 gated) that
   gates CI;
-- **honest, reproducible evals in CI** — deterministic lexical proxies gate the
-  build with no model, no network, and no cost — and are
-  [calibrated](docs/eval-calibration.md) against a real LLM judge so we know
-  their blind spots;
-- **observable** — every answer carries a `trace_id` and per-stage timings, with
+- **reproducible evals in CI**: deterministic lexical proxies gate the build
+  with no model and no network, and a [calibration script](docs/eval-calibration.md)
+  compares them with a local LLM judge to locate their blind spots;
+- **tracing**: every answer carries a `trace_id` and per-stage timings, with
   a [latency benchmark](#latency) that gates against p95 regressions;
-- **a fine-tuning study that caught its own leak** — a headline 0.92 that turned
+- **a fine-tuning study with a found leak**: a first result of 0.92 that turned
   out to be measured on the training set, and what a 28-question holdout can and
-  cannot say instead ([below](#fine-tuning-how-i-caught-my-own-eval-grading-its-own-homework));
-- **MLOps** — process → train → evaluate → register, with a promotion gate that
+  cannot say instead ([below](#fine-tuning-the-train-set-leak-and-the-held-out-eval));
+- **MLOps**: process → train → evaluate → register, with a promotion gate that
   rejects a candidate whose held-out metrics drop, plus SageMaker and Terraform
   scaffolding;
-- **engineering hygiene** — `uv`, `ruff`, `mypy --strict`, `pytest` with coverage,
+- **tooling**: `uv`, `ruff`, `mypy --strict`, `pytest` with coverage,
   Docker, GitHub Actions.
 
-Everything runs **offline and for free**: embeddings and generation via Ollama, plus a deterministic `hash` embedding provider so that **tests and CI are reproducible without a model or network**.
+Everything runs **offline with no API cost**: embeddings and generation via Ollama, plus a deterministic `hash` embedding provider so that **tests and CI are reproducible without a model or network**.
 
 ---
 
@@ -120,7 +118,7 @@ uv sync --extra dev
 
 ## Usage
 
-### CLI (offline, no model — `hash` provider)
+### CLI (offline, no model, `hash` provider)
 
 ```bash
 # Ask (deterministic extractive fallback, no LLM)
@@ -157,7 +155,7 @@ curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
   -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
 ```
 
-Streaming (Server-Sent Events) — incremental `token` events then a terminal
+Streaming (Server-Sent Events): incremental `token` events then a terminal
 `done` event carrying sources, grounding and the trace:
 
 ```bash
@@ -172,7 +170,7 @@ Every response echoes an `x-request-id` header (minted if the caller omits it).
 
 ## Evaluation
 
-`anchora` is evaluated against a *golden set* of 24 questions (`data/golden/golden.json`) covering the 8 documents in the corpus. The metrics are **deterministic lexical proxies** of DeepEval/RAGAS — honest and reproducible, suitable for a CI *gate* at no cost:
+`anchora` is evaluated against a *golden set* of 24 questions (`data/golden/golden.json`) covering the 8 documents in the corpus. The metrics are **deterministic lexical proxies** of DeepEval/RAGAS. They are reproducible and need no model, which is what a CI *gate* requires:
 
 | Metric | What it measures |
 |---|---|
@@ -183,11 +181,11 @@ Every response echoes an `x-request-id` header (minted if the caller omits it).
 
 The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0** or if **average faithfulness < 0.70** (`faithfulness_threshold`). Both thresholds are hand-picked, not derived from data. Today the gate passes with recall 24/24 (Wilson 95% [0.86, 1.00]); those 24 questions are the ones the EN→PT glossary bridge was fit to, so this is a regression check on known questions, not a measure of retrieval on new ones (for that, see the holdout rows below). The **LLM-judge** versions (DeepEval/RAGAS via Ollama) can be run locally with `scripts/compare_evals.py`.
 
-> Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies provide an objective, free floor; the local *judge* remains available for richer analysis. How far the proxy tracks a real judge — and where it is blind (negation, paraphrase, numbers) — is measured in [`scripts/calibrate_judge.py`](scripts/calibrate_judge.py) and documented in [`docs/eval-calibration.md`](docs/eval-calibration.md).
+> Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies give a reproducible floor; the local *judge* remains available for a closer read. How far the proxy tracks a judge, and where it is blind (negation, paraphrase, numbers), is measured in [`scripts/calibrate_judge.py`](scripts/calibrate_judge.py) and documented in [`docs/eval-calibration.md`](docs/eval-calibration.md).
 
 ### Retrieval: hybrid (BM25 + dense)
 
-Dense cosine generalizes across phrasing; BM25 nails rare statute vocabulary.
+Dense cosine tolerates rephrasing; BM25 matches rare statute vocabulary exactly.
 `anchora` fuses both with Reciprocal Rank Fusion (`retrieval_mode=hybrid`, the
 default). The three modes are compared in an ablation; reproduce it with
 `make ablation` ([ADR 4](docs/adr/0004-hybrid-retrieval-rrf.md)).
@@ -246,11 +244,11 @@ p50/p95 per stage with a regression gate (`--max-p95-ms`). Every `AgentResult`
 and `/ask` response carries a `trace_id` and per-stage `timing_ms`, and the API
 echoes an `x-request-id` on every response for correlation.
 
-### Fine-tuning: how I caught my own eval grading its own homework
+### Fine-tuning: the train-set leak and the held-out eval
 
 LoRA fine-tuning is wired with `scripts/finetune_lora.py` and
 `scripts/evaluate_finetune.py`, run on Apple Silicon MPS against
-`Qwen/Qwen2.5-1.5B-Instruct`. The first run looked like a triumph:
+`Qwen/Qwen2.5-1.5B-Instruct`. The first run reported
 **0.92 grounded rate vs. 0.17 for the base model** (22/24 vs 4/24). The outputs
 of that run were never committed, so those two numbers cannot be reproduced from
 this repo; they stay here only as the record of the mistake below.
@@ -262,7 +260,7 @@ answers, not a skill. What I did about it:
 1. **Built a disjoint holdout**: 28 new questions over the same corpus
    (22 answerable, 6 out-of-corpus), asserted disjoint from training in
    `tests/test_holdout.py`. The adapter never saw them.
-2. **Added a fair few-shot baseline**: the base model given the same `PT + [n]`
+2. **Added a few-shot baseline**: the base model given the same `PT + [n]`
    output contract via few-shot, to separate *learned knowledge* from *learned
    format*.
 3. **Fixed the metrics**: `grounded_rate` only checked for a `[n]` bracket, so I
@@ -351,43 +349,43 @@ Full arc (every failed run, the leak, the fix, the ratio sweep, the gate) in
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
 | **v0.5** ← current | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
 
-**Next — v1.0 (demo + close the documented gaps)**
+**Next: v1.0 (demo + close the documented gaps)**
 
 Every item below is traceable to a limitation this repo already names, so the
 roadmap closes known gaps instead of chasing new surface:
 
 - [ ] **Recorded demo** (asciinema/GIF) of the CLI + API flow, linked from the README.
-- [ ] **Methodology write-up** — the eval-leak → honest-holdout arc as a short public post.
-- [x] **Out-of-domain floor** — the abstain check now requires several distinct
+- [ ] **Methodology write-up**: the eval leak and the holdout that replaced it, as a short post.
+- [x] **Out-of-domain floor**: the abstain check now requires several distinct
   corpus tokens (not one incidental collision) and exposes an optional dense
-  similarity threshold for the production embedder, closing the single-token gap
+  similarity threshold for the Ollama embedder, closing the single-token gap
   (`ood-008`). Calibrated on measured overlap, offline. ([ADR 6](docs/adr/0006-out-of-domain-floor.md).)
-- [ ] **Real-token SSE** — stream tokens from Ollama as they decode, replacing the
+- [ ] **Real-token SSE**: stream tokens from Ollama as they decode, replacing the
   current post-hoc word chunking (see `POST /ask/stream`).
-- [ ] **Judge-calibrated thresholds** — once `scripts/calibrate_judge.py` has a
+- [ ] **Judge-calibrated thresholds**: once `scripts/calibrate_judge.py` has a
   judged sample, set the CI faithfulness floor from measured proxy/judge agreement
   rather than a hand-picked 0.70.
 
 **Deliberately out of scope** (stated so the boundaries are a choice, not an omission)
 
-- A hosted-API path — local-first is a design constraint ([ADR 2](docs/adr/0002-local-first-no-paid-apis.md)), not a missing feature.
-- A web UI — this is a retrieval/eval/guardrails engine; the API and CLI are the surface.
-- A larger corpus — the point is measured behaviour on a fixed, auditable set, not coverage breadth.
+- A hosted-API path: local-first is a design constraint ([ADR 2](docs/adr/0002-local-first-no-paid-apis.md)), not a missing feature.
+- A web UI: this is a retrieval/eval/guardrails engine; the API and CLI are the surface.
+- A larger corpus: the point is measured behaviour on a fixed, auditable set, not coverage breadth.
 
 ---
 
 ## Documentation
 
-- **Architecture decisions** — [`docs/adr/`](docs/adr/): deterministic proxies in
+- **Architecture decisions**: [`docs/adr/`](docs/adr/): deterministic proxies in
   CI, local-first, hand-rolled RAG, hybrid retrieval (RRF), 5-vs-10 abstention,
   and the out-of-domain floor.
-- **Model card** — [`docs/model-card.md`](docs/model-card.md): the promoted LoRA
+- **Model card**: [`docs/model-card.md`](docs/model-card.md): the promoted LoRA
   adapter, its held-out metrics, limitations and governance.
-- **Datasheet** — [`data/README.md`](data/README.md): what every dataset is, how
+- **Datasheet**: [`data/README.md`](data/README.md): what every dataset is, how
   it was built, and the synthetic-PII note.
-- **Eval calibration** — [`docs/eval-calibration.md`](docs/eval-calibration.md):
+- **Eval calibration**: [`docs/eval-calibration.md`](docs/eval-calibration.md):
   proxy-vs-judge agreement and the proxy's blind spots.
-- **Fine-tuning arc** — [`docs/finetuning-results.md`](docs/finetuning-results.md):
+- **Fine-tuning arc**: [`docs/finetuning-results.md`](docs/finetuning-results.md):
   the leak, the fix, the ratio sweep, the gate.
 
 ## Development
@@ -399,9 +397,10 @@ uv run mypy
 uv run pytest
 ```
 
-Or all at once: `make check` — runs lint, format, types, tests, the eval gate,
-the honest fine-tune replay, the adversarial suite and the latency benchmark.
+Or all at once: `make check` runs lint, format, types, tests, the eval gate,
+the frozen fine-tune replay and the adversarial suite. The latency benchmark
+runs separately (`make bench`), as in CI.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT, see [LICENSE](LICENSE).

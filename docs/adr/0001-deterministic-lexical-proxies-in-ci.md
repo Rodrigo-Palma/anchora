@@ -7,7 +7,8 @@ Date: 2026-06-24 · Status: Accepted
 RAG quality (faithfulness, answer relevance, context precision/recall) is
 usually scored with an LLM judge (DeepEval/RAGAS). An LLM judge is
 non-deterministic and, for hosted judges, costs money per run. A CI gate must
-be reproducible and free, or it cannot block a merge honestly.
+be reproducible and free; a gate whose verdict changes between runs of the
+same commit cannot justify blocking a merge.
 
 ## Decision
 
@@ -20,7 +21,7 @@ signal tracks the expensive one instead of assuming it.
 ## Consequences
 
 - CI is free, deterministic, and re-runs identically on any machine.
-- The proxy has known blind spots (negation, paraphrase, numeric correctness) —
+- The proxy has known blind spots (negation, paraphrase, numeric correctness),
   documented in [`eval-calibration.md`](../eval-calibration.md), not hidden.
 - A metric regression fails the build objectively; the judge adds depth on
   demand without ever being on the critical path.

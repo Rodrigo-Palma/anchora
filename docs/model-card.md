@@ -1,7 +1,7 @@
-# Model card — anchora-qa LoRA adapter
+# Model card: anchora-qa LoRA adapter
 
 A small model card for the fine-tuned adapter that the promotion gate keeps in
-`prod`. Numbers are the honest held-out figures reproduced in CI without a GPU
+`prod`. Numbers are the held-out figures reproduced in CI without a GPU
 (`make eval-honest`); the full experimental arc is in
 [`finetuning-results.md`](finetuning-results.md).
 

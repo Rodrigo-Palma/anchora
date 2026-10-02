@@ -19,5 +19,5 @@ Ollama is the only external moving part, behind a thin client.
 
 - Every ranking and grounding decision is inspectable and unit-testable.
 - No framework version churn; the dependency surface stays small.
-- We own code a framework would provide (e.g. the BM25 index) — accepted,
+- We own code a framework would provide (e.g. the BM25 index). Accepted,
   because that code is exactly the part being demonstrated and measured.

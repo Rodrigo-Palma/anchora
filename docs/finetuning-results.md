@@ -55,7 +55,7 @@ Até 20 dias, prorrogável por mais 10 dias mediante justificativa. [1]
 
 ## Experiments
 
-### Experiment A — naive prompt+completion loss
+### Experiment A: naive prompt+completion loss
 
 Command:
 
@@ -77,7 +77,7 @@ Result:
 Interpretation: the adapter improved content overlap, but it failed the main
 RAG requirement: cite or abstain. It should **not** be promoted.
 
-### Experiment B — completion-only loss, too aggressive
+### Experiment B: completion-only loss, too aggressive
 
 Command:
 
@@ -99,7 +99,7 @@ Result:
 Interpretation: this run became unstable after epoch 6 (`grad_norm=nan`) and
 collapsed at evaluation time. It is a useful failed experiment, not a candidate.
 
-### Experiment C — completion-only loss, lower LR
+### Experiment C: completion-only loss, lower LR
 
 Command:
 
@@ -122,7 +122,7 @@ Result:
 Interpretation: this was stable and improved faithfulness slightly, but still
 reduced grounded/cited outputs. It should **not** be promoted yet.
 
-### Experiment D — larger base model, completion-only loss
+### Experiment D: larger base model, completion-only loss
 
 Command:
 
@@ -148,7 +148,7 @@ with overlapping intervals, so it is not evidence of improvement, and
 faithfulness went down. This is useful evidence, but it is still not
 a promotion candidate.
 
-### Experiment E — larger base model, lower LR
+### Experiment E: larger base model, lower LR
 
 Command:
 
@@ -172,7 +172,7 @@ Interpretation: the lower learning rate was stable, but it did not improve
 grounding and reduced both faithfulness and answer relevance. It should not be
 promoted.
 
-### Experiment F — larger base model, early stopping and fixed truncation
+### Experiment F: larger base model, early stopping and fixed truncation
 
 The first long-running early-stopping attempts exposed a real bug in the SFT
 pipeline: long prompts could consume the full sequence length, leaving no answer
@@ -201,8 +201,10 @@ Result (`max_new_tokens=48`):
 | Base | 4/24 = 0.167 [0.07, 0.36] | 0.2668 | 0.8376 | 0.1668 |
 | LoRA | 22/24 = 0.917 [0.74, 0.98] | 0.9208 | 0.0458 | 0.7338 |
 
-Interpretation: this is the first strong LoRA result. The tuned adapter produces
-short Portuguese legal answers with citations and much higher faithfulness. The
+Interpretation at the time: the tuned adapter produces short Portuguese legal
+answers with citations and much higher faithfulness. This was scored on the
+training questions, so it measures fit, not generalization (see the methodology
+fix below). The
 low `answer_relevance` is a known limitation of this lexical proxy when comparing
 English questions against concise Portuguese answers; `reference_overlap` is the
 more appropriate supervised fine-tuning metric here.
@@ -224,15 +226,15 @@ by Git.
 
 ## Decision
 
-Promote only the early-stopped `1.5B` adapter as **experimental**. The honest
-v0.3 result is:
+Promote only the early-stopped `1.5B` adapter as **experimental**. The v0.3
+result as written at the time (superseded by the methodology fix below):
 
 > LoRA is wired end-to-end and measured. The initial 5-epoch runs were too small
 > and the first long run exposed a sequence-truncation bug. After fixing
 > completion preservation and adding early stopping, the `1.5B` adapter improves
 > grounded rate, faithfulness and reference overlap on the 24-case benchmark.
 
-## Methodology Fix — the headline number was measured on the training set
+## Methodology Fix: the headline number was measured on the training set
 
 The most important thing I learned here is not the 0.92. It is that **the 0.92
 is not trustworthy as stated**. `build_finetune_dataset.py` builds the training
@@ -242,33 +244,33 @@ same golden set*. Train == test. So the jump from 0.17 to 0.92 (4/24 to 22/24) l
 it: `reference_overlap` compares the answer against the very gold string the
 model was trained to reproduce (near-tautological on the training split), and
 `grounded_rate` only checks that a `[n]` bracket is present, not that the cited
-index is the right document — so an adapter that learns to always append a
+index is the right document, so an adapter that learns to always append a
 bracket scores high "grounding" for free.
 
 This is a valid **smoke test** (the SFT pipeline is correctly wired and the model
-can learn the target format). It is not evidence that the adapter is *better* —
+can learn the target format). It is not evidence that the adapter is *better*,
 and reporting it as such would be an unsupported claim.
 
 ### What changed (v0.3.1)
 
-1. **A held-out evaluation set** — `data/golden/holdout.json`: 28 brand-new
+1. **A held-out evaluation set**, `data/golden/holdout.json`: 28 new
    questions over the *same* corpus, fully disjoint from the training golden set
    (asserted by `tests/test_holdout.py`). 22 are answerable; 6 are out-of-corpus
    cases whose only correct behavior is to abstain with the exact refusal
    sentence. The adapter never saw any of these.
 
-2. **A fair few-shot baseline** — `evaluate_finetune.py --few-shot` adds a third
+2. **A few-shot baseline**: `evaluate_finetune.py --few-shot` adds a third
    row: the *base* model prompted with a few worked examples in the same
    `PT + [n]` output contract (exemplars taken only from the training golden set,
    never the holdout). This isolates the real question: did fine-tuning teach
    *knowledge*, or just the *output format* that few-shot prompting gives the base
    model for free?
 
-3. **Abstention-aware scoring** — answerable cases are scored with the lexical
+3. **Abstention-aware scoring**: answerable cases are scored with the lexical
    proxies; out-of-corpus cases are scored by whether the model correctly
    abstained (`abstention_rate`), not by answer overlap.
 
-### First honest signal (no model required)
+### First held-out signal (no model required)
 
 The deterministic `hash` retriever already exposes a generalization gap before a
 single token is generated:
@@ -282,7 +284,7 @@ The intervals overlap, so 22 questions do not establish a recall drop; what
 they do show is 3 concrete misses the perfect-recall CI gate could never
 surface, because it only asks the questions the glossary was fit to.
 
-### Run the honest comparison
+### Run the held-out comparison
 
 ```bash
 # three fair rows — base zero-shot, base few-shot, LoRA — on UNSEEN questions
@@ -295,10 +297,10 @@ uv run python scripts/evaluate_finetune.py \
   --max-new-tokens 48
 ```
 
-Both outcomes are good outcomes: if the LoRA still beats base+few-shot on the
-holdout, the gain is real and defensible; if it does not, the honest finding is
-*"for this task, few-shot matched fine-tuning — the adapter did not pay for
-itself."* Either is a stronger signal than a memorized 0.92.
+Either outcome is informative: if the LoRA beats base+few-shot on the holdout,
+the gain is not explained by output format alone; if it does not, the finding is
+*"for this task, few-shot matched fine-tuning; the adapter did not pay for
+itself."* Either says more than a memorized 0.92.
 
 ### Results on the holdout (actual, `Qwen2.5-1.5B`, `max_new_tokens=48`)
 
@@ -459,10 +461,10 @@ a rule that requires the drop to be significant. Final prod: `v0.3-lora5`. (The
 registry file lives under `artifacts/` and is not tracked; the capability is the
 code and the gate, not the JSON.)
 
-### Frozen so it runs in CI — no GPU, no network
+### Frozen so it runs in CI: no GPU, no network
 
 The generation runs above need a GPU (Apple MPS), and the raw comparison JSONs
-under `artifacts/` are not tracked — so from a clean checkout none of these
+under `artifacts/` are not tracked, so from a clean checkout none of these
 numbers could be reproduced. To close that gap without re-generating, the real
 decoded outputs are frozen per arm in `data/eval/holdout-generations.json` (actual
 model outputs, not invented numbers) and re-scored deterministically:
