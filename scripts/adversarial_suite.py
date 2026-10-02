@@ -18,6 +18,12 @@ deterministic rule-based guardrail (e.g. base64-encoded payloads). They are
 reported, but do not gate CI — pretending a regex catches them would be the
 kind of dishonest number this project exists to avoid.
 
+Each rate is printed as ``k/n`` with a 95% Wilson interval, and the total is
+reported twice: over the gated attacks and over all attacks including the known
+gaps. The attacks are hand-written, not sampled from real traffic, so the
+interval describes this suite only; it does not bound the miss rate on attacks
+nobody wrote down.
+
 Usage::
 
     uv run python scripts/adversarial_suite.py            # table
@@ -36,6 +42,7 @@ from typing import Any
 from anchora.agent import Agent, AgentResult
 from anchora.guardrails import detect_pii, is_abstention, redact_pii
 from anchora.ingest import ingest_dir
+from anchora.stats import wilson_interval
 
 _ROOT = Path(__file__).resolve().parents[1]
 _CORPUS_DIR = _ROOT / "data" / "corpus"
@@ -98,26 +105,28 @@ def run_suite() -> list[AttackOutcome]:
     return [run_attack(agent, attack) for attack in load_attacks()]
 
 
-def print_report(outcomes: list[AttackOutcome]) -> None:
+def summary_rows(outcomes: list[AttackOutcome]) -> list[tuple[str, int, int]]:
+    """``(label, handled, n)`` per category (gated only), then both totals."""
     by_category: dict[str, list[AttackOutcome]] = defaultdict(list)
     for outcome in outcomes:
-        by_category[outcome.category].append(outcome)
-
-    print(f"{'category':<20} {'blocked/handled':>16} {'rate':>7}")
-    print("-" * 46)
+        if not outcome.known_gap:
+            by_category[outcome.category].append(outcome)
+    rows = [
+        (category, sum(1 for o in items if o.passed), len(items))
+        for category, items in sorted(by_category.items())
+    ]
     gated = [o for o in outcomes if not o.known_gap]
-    for category in sorted(by_category):
-        items = [o for o in by_category[category] if not o.known_gap]
-        if not items:
-            continue
-        passed = sum(1 for o in items if o.passed)
-        print(f"{category:<20} {f'{passed}/{len(items)}':>16} {passed / len(items):>7.2f}")
-    total_passed = sum(1 for o in gated if o.passed)
-    print("-" * 46)
-    print(
-        f"{'TOTAL (gated)':<20} {f'{total_passed}/{len(gated)}':>16} "
-        f"{total_passed / len(gated):>7.2f}"
-    )
+    rows.append(("TOTAL (gated)", sum(1 for o in gated if o.passed), len(gated)))
+    rows.append(("TOTAL (all, gaps incl.)", sum(1 for o in outcomes if o.passed), len(outcomes)))
+    return rows
+
+
+def print_report(outcomes: list[AttackOutcome]) -> None:
+    print(f"{'category':<24} {'handled':>8} {'rate':>6} {'Wilson 95%':>14}")
+    print("-" * 55)
+    for label, passed, n in summary_rows(outcomes):
+        low, high = wilson_interval(passed, n)
+        print(f"{label:<24} {f'{passed}/{n}':>8} {passed / n:>6.2f} [{low:.2f}, {high:.2f}]")
 
     gaps = [o for o in outcomes if o.known_gap]
     if gaps:
@@ -126,7 +135,7 @@ def print_report(outcomes: list[AttackOutcome]) -> None:
             status = "handled anyway" if o.passed else "not caught"
             print(f"  - {o.attack_id} [{o.category}]: {status}")
 
-    failures = [o for o in gated if not o.passed]
+    failures = [o for o in outcomes if not o.known_gap and not o.passed]
     if failures:
         print("\nFailures:")
         for o in failures:

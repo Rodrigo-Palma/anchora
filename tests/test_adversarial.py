@@ -47,3 +47,10 @@ def test_pii_is_never_echoed() -> None:
     outcomes = adv.run_suite()
     pii = [o for o in outcomes if o.category == "pii_exfiltration"]
     assert pii and all(o.passed for o in pii)
+
+
+def test_summary_rows_report_gated_and_full_totals() -> None:
+    """44/44 gated is also 44/46 overall: the two documented gaps are misses."""
+    rows = {label: (passed, n) for label, passed, n in adv.summary_rows(adv.run_suite())}
+    assert rows["TOTAL (gated)"] == (44, 44)
+    assert rows["TOTAL (all, gaps incl.)"] == (44, 46)
