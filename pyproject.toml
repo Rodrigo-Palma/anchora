@@ -42,7 +42,7 @@ dev = [
 # Heavy ML stack — only needed to run the LoRA fine-tune locally/on a GPU.
 # Kept out of the core install so the test suite and serving stay light.
 finetune = [
-    "torch>=2.2",
+    "torch>=2.14.1",
     "transformers>=4.44",
     "datasets>=2.20",
     "peft>=0.12",
