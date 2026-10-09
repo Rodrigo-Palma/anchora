@@ -5,6 +5,49 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [0.7.0] - 2026-10-09
+
+Close the gaps a review found between what the docs promise and what the code
+does: the API now fails closed, the exceeded false-positive ceiling is replaced
+by a gate that holds, and CI checks the lockfile and known advisories.
+
+### Security
+- `/ingest` no longer reads arbitrary server paths. `directory` must resolve
+  inside `ANCHORA_CORPUS_ROOT` (default `data/corpus`, else `400`), symlinks
+  that leave it are skipped, and file count and size are capped (`413`).
+  Before this, a caller could index any `.md`/`.txt` the process could read
+  and read it back through `/ask`.
+- With no `ANCHORA_API_KEY` the API serves loopback peers only and answers
+  `503` to anyone else, so the Docker image (bound to `0.0.0.0`) no longer
+  starts open. The key is compared with `secrets.compare_digest`. **Breaking**
+  for anyone calling a keyless server from another host: set a key.
+- PII in the answer is redacted on `/ask`, and retracted then redacted on
+  `/ask/stream` (ADR 8). Only the question was redacted before.
+- `anyio` and `virtualenv` bumped past 7 advisories found by `pip-audit`;
+  `fastapi` 0.143.0 and `mypy` 2.4.0.
+
+### Changed
+- The in-domain false-positive ceiling (0.05) is recorded as revoked: it was
+  exceeded on its first measurement (4/46). `make adversarial` now fails if the
+  blocked in-domain questions are not exactly the pinned four, in either
+  direction (ADR 6 addendum). The hard look-alike ceiling (0.25) still gates,
+  at 7/30 with no slack.
+- `/ask/stream`: `done` carries `truncated: true` when the model stream breaks
+  after the first token, and `output_pii_redacted`.
+- CI: `uv sync --locked`, `permissions: contents: read`, actions pinned by SHA
+  (node24 releases), a `pip-audit` step (`make audit` locally), and a
+  security-only `dependabot.yml`. The Docker image pins `uv` 0.10.10.
+
+### Documentation
+- README: a Key results table under the demo; the faithfulness gate is stated
+  as scored on extractive answers (a regression floor on retrieval plus
+  extraction, not on model output); the promoted LoRA adapter is stated as a
+  separate study, not the serving path (`qwen3:32b`, no adapter).
+- The ceilings in `benign.json` and the rule in ADR 7 were declared before
+  their measurements but committed with them; 0.6.0 said "declared before the
+  first run" without that caveat. Future rules get their own commit first.
+- Em dashes removed from the changelog, datasheet and fine-tuning notes.
+
 ## [0.6.0] - 2026-10-09
 
 Measure what was previously assumed: the faithfulness proxy against LLM judges,
