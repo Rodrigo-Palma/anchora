@@ -73,3 +73,30 @@ abstention short-circuits without embedding work when the similarity floor is of
 - The similarity floor is wired and tested but off by default; enabling it on the
   Ollama path is a config change (`ANCHORA_OOD_SIMILARITY_THRESHOLD`), calibrated
   against real embeddings rather than the offline proxy.
+
+## Addendum (2026-10-09): measured on the holdout, the margin does not hold
+
+The integer margin above was measured on the golden set, the same 24 questions
+the EN→PT glossary bridge was fit to. Replaying the answerable holdout questions
+through the agent (`make adversarial`, benign side) shows that 4 of 22 abstain
+(Wilson 95% [0.07, 0.39]): `ho-defensoria-garantias`, `ho-defensoria-natureza`
+and `ho-lgpd-objetivo` share one distinct corpus token, `ho-licitacao-substituiu`
+shares none. Their English vocabulary has no glossary entry.
+
+Distinct-overlap floor against every labelled set (number that abstains):
+
+| Floor | golden in-domain (n=24) | holdout answerable (n=22) | holdout out-of-corpus (n=6) | `ood-*` attacks (n=12) |
+|---|---|---|---|---|
+| 1 | 0 | 1 | 4 | 11 |
+| **2** (current) | 0 | 4 | 6 | 12 |
+| 3 | 3 | 9 | 6 | 12 |
+
+The floor stays at 2. Moving to 1 would answer 3 more legitimate holdout
+questions but would also answer 2 of the 6 out-of-corpus holdout questions and
+`ood-008`, and for a legal assistant a wrong answer with a citation costs more
+than an abstention. The cost is stated rather than hidden: the four questions
+are listed as `known_over_blocks` in `data/adversarial/benign.json`, reported in
+every total and excluded from the false-positive gate, and a test fails if that
+set changes in either direction. The fix that would remove the cost is semantic
+(the similarity floor on the production embedder, or a larger bridge measured
+on new questions), not a different integer.

@@ -33,8 +33,11 @@ eval-honest: ## Re-score frozen held-out generations + replay the promotion gate
 ablation: ## Measure retrieval modes (dense vs bm25 vs hybrid) on golden + holdout
 	uv run python scripts/ablation_retrieval.py
 
-adversarial: ## Replay the adversarial guardrail suite and gate on the block rate
+adversarial: ## Replay attacks + benign questions; gate on block rate and false-positive rate
 	uv run python scripts/adversarial_suite.py --check
+
+adversarial-external: ## Replay a public prompt-injection set (deepset, frozen) - not gated
+	uv run python scripts/adversarial_suite.py --external
 
 bench: ## Benchmark offline pipeline latency (p50/p95 per stage) with a regression gate
 	uv run python scripts/benchmark.py --max-p95-ms 250

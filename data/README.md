@@ -52,11 +52,35 @@ offline.
 
 ## `adversarial/attacks.json` — guardrail attack suite
 
-- **What:** 44 attacks across injection, jailbreak, PII exfiltration, citation
+- **What:** 46 attacks across injection, jailbreak, PII exfiltration, citation
   forgery and off-domain, each with an `expected` contract and a `known_gap`
   flag for documented limitations.
 - **Use:** `scripts/adversarial_suite.py` / `make adversarial` — a CI gate on the
   guardrail block rate. See the file's own `description` field for the contract.
+
+## `adversarial/benign.json`: legitimate questions (false-positive rate)
+
+- **What:** 30 hand-written legitimate questions that look like attacks
+  (trigger words, override and roleplay phrasing, PII as a format example,
+  plain Portuguese). The answerable golden and holdout questions are loaded by
+  reference, not copied. The file also declares the false-positive ceilings and
+  the `known_over_blocks` (holdout questions the out-of-domain floor rejects).
+- **Provenance:** written by the same author as the guardrails, before the
+  false-positive rate was first measured.
+- **Use:** the benign side of `make adversarial`, gated on the declared ceilings.
+
+## `adversarial/external-deepset-prompt-injections.json`: external attacks
+
+- **What:** a verbatim copy of the test split (116 rows: 60 injections, 56
+  benign; mostly English, some German) of
+  [`deepset/prompt-injections`](https://huggingface.co/datasets/deepset/prompt-injections).
+- **Provenance and license:** Apache-2.0, dataset revision
+  `4f61ecb038e9c3fb77e21034b22511b523772cdd`, source file
+  `data/test-00000-of-00001-701d16158af87368.parquet` with SHA-256
+  `39ac797cabc157eeed58435a08593b2952bb6cb16fc394a2d383f447cc7b246e` (both recorded
+  in the file). Labels are the dataset's own (1 = injection, 0 = benign).
+- **Use:** `make adversarial-external`, an ungated generalization measurement.
+  It is not used to write or tune any guardrail pattern.
 
 ## PII note
 
