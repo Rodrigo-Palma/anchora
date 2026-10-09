@@ -28,7 +28,8 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 
-from anchora.agent import Agent
+from anchora import llm
+from anchora.agent import Agent, AgentResult
 from anchora.config import settings
 from anchora.guardrails import detect_pii, redact_pii
 from anchora.ingest import ingest_dir
@@ -160,24 +161,23 @@ def create_app() -> FastAPI:
 
     @app.post("/ask/stream", dependencies=[Depends(require_api_key)])
     def ask_stream(req: AskRequest) -> StreamingResponse:
-        """Answer via Server-Sent Events: incremental ``token`` events then ``done``.
+        """Answer via Server-Sent Events: ``token`` events, then ``done``.
 
-        The answer is composed first (guardrails, retrieval, grounding all run)
-        and then delivered incrementally word-by-word, so the SSE contract —
-        framing, progressive delivery, and a terminal event carrying sources,
-        grounding and the trace — is exercised deterministically offline. With
-        the local model the same framing carries the model's tokens.
+        Guardrails, the domain floor and retrieval run first. With ``use_llm``
+        the model's tokens are forwarded as Ollama decodes them, and the output
+        guardrail runs on the complete text: if it is not grounded, a
+        ``retracted`` event carrying the abstention replaces what the client
+        has already shown (ADR 8). Refusals, abstentions and the offline
+        extractive path are delivered word by word. If the model is unreachable
+        before the first token, the extractive answer is used instead.
         """
         pii_found = bool(detect_pii(req.question))
         question = redact_pii(req.question) if pii_found else req.question
-        store = get_store()
-        agent = Agent(store, k=req.k, provider=req.provider, use_llm=req.use_llm)
-        result = agent.run(question)
+        agent = Agent(get_store(), k=req.k, provider=req.provider, use_llm=req.use_llm)
+        prepared = agent.prepare(question)
 
-        def event_stream() -> Iterator[str]:
-            for word in result.answer.split():
-                yield _sse("token", {"text": word + " "})
-            yield _sse(
+        def done(result: AgentResult) -> str:
+            return _sse(
                 "done",
                 {
                     "question": question,
@@ -189,6 +189,39 @@ def create_app() -> FastAPI:
                     "timing_ms": {s.name: round(s.duration_ms, 3) for s in result.trace.spans},
                 },
             )
+
+        def words(text: str) -> Iterator[str]:
+            for word in text.split():
+                yield _sse("token", {"text": word + " "})
+
+        def event_stream() -> Iterator[str]:
+            if prepared.result is not None:
+                yield from words(prepared.result.answer)
+                yield done(prepared.result)
+                return
+            if not req.use_llm:
+                result = agent.finalize(prepared, agent.extractive_answer(prepared))
+                yield from words(result.answer)
+                yield done(result)
+                return
+            parts: list[str] = []
+            with prepared.trace.stage("generation"):
+                try:
+                    for piece in llm.stream_answer(question, prepared.chunks):
+                        parts.append(piece)
+                        yield _sse("token", {"text": piece})
+                except llm.LLMUnavailableError:
+                    if not parts:
+                        fallback = agent.extractive_answer(prepared)
+                        parts.append(fallback)
+                        yield from words(fallback)
+            text = "".join(parts)
+            if prepared.deadline_fact and prepared.deadline_fact not in text:
+                text = f"{text}\n\n{prepared.deadline_fact}"
+            result = agent.finalize(prepared, text)
+            if result.retraction is not None:
+                yield _sse("retracted", {"reason": result.retraction, "answer": result.answer})
+            yield done(result)
 
         return StreamingResponse(event_stream(), media_type="text/event-stream")
 

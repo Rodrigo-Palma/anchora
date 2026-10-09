@@ -155,8 +155,11 @@ curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
   -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
 ```
 
-Streaming (Server-Sent Events): incremental `token` events then a terminal
-`done` event carrying sources, grounding and the trace:
+Streaming (Server-Sent Events): with the model on, `token` events carry text as
+Ollama decodes it; the grounding check runs on the complete answer, and an
+ungrounded one is followed by a `retracted` event with the abstention that
+replaces it ([ADR 8](docs/adr/0008-streaming-with-output-validation.md)). A
+terminal `done` event carries sources, grounding and the trace:
 
 ```bash
 curl -N -s -X POST localhost:8000/ask/stream -H 'content-type: application/json' \
@@ -435,8 +438,9 @@ roadmap closes known gaps instead of chasing new surface:
   corpus tokens (not one incidental collision) and exposes an optional dense
   similarity threshold for the Ollama embedder, closing the single-token gap
   (`ood-008`). Calibrated on measured overlap, offline. ([ADR 6](docs/adr/0006-out-of-domain-floor.md).)
-- [ ] **Real-token SSE**: stream tokens from Ollama as they decode, replacing the
-  current post-hoc word chunking (see `POST /ask/stream`).
+- [x] **Real-token SSE**: `POST /ask/stream` forwards tokens as Ollama decodes
+  them and retracts an answer that fails the grounding check
+  ([ADR 8](docs/adr/0008-streaming-with-output-validation.md)).
 - [ ] **Judge-calibrated thresholds**: once `scripts/calibrate_judge.py` has a
   judged sample, set the CI faithfulness floor from measured proxy/judge agreement
   rather than a hand-picked 0.70.
