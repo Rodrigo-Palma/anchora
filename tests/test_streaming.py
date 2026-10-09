@@ -117,7 +117,8 @@ def test_sse_retracts_an_ungrounded_answer(
 
 def test_sse_retracts_a_forged_citation(api: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
     _patch_model(monkeypatch, ["Pregão [99]."])
-    events = _events(api.post("/ask/stream", json={"question": _QUESTION}).text)
+    body = {"question": _QUESTION, "provider": "hash"}  # offline: CI has no Ollama
+    events = _events(api.post("/ask/stream", json=body).text)
     assert [name for name, _ in events][-2:] == ["retracted", "done"]
 
 
