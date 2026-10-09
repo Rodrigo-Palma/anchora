@@ -1,0 +1,868 @@
+{
+  "_comment": "Frozen LLM-judge faithfulness scores (0..1, from a 0-4 rubric) for every answerable, non-abstaining held-out generation. Re-scored offline by scripts/calibrate_judge.py --check; see docs/eval-calibration.md.",
+  "generations": "data/eval/holdout-generations.json",
+  "retrieval": {
+    "provider": "hash",
+    "mode": "dense",
+    "k": 4
+  },
+  "judge_faithful_at": 0.75,
+  "excluded_abstentions": [
+    "base_fewshot/ho-licitacao-substituiu",
+    "lora0/ho-lgpd-objetivo",
+    "lora0/ho-licitacao-substituiu",
+    "lora10/ho-8112-suspensao",
+    "lora10/ho-cpc-recesso",
+    "lora10/ho-lai-custo",
+    "lora10/ho-lgpd-objetivo",
+    "lora10/ho-licitacao-substituiu",
+    "lora5/ho-lgpd-objetivo",
+    "lora5/ho-licitacao-substituiu"
+  ],
+  "items": {
+    "base_zeroshot/ho-lai-regra": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-lai-regra",
+      "proxy": 0.1034
+    },
+    "base_zeroshot/ho-lai-privacidade": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-lai-privacidade",
+      "proxy": 0.16
+    },
+    "base_zeroshot/ho-8112-exercicio": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-8112-exercicio",
+      "proxy": 0.125
+    },
+    "base_zeroshot/ho-8112-suspensao": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-8112-suspensao",
+      "proxy": 0.125
+    },
+    "base_zeroshot/ho-8112-ferias": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-8112-ferias",
+      "proxy": 0.08
+    },
+    "base_zeroshot/ho-defensoria-garantias": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-defensoria-garantias",
+      "proxy": 0.0833
+    },
+    "base_zeroshot/ho-defensoria-natureza": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-defensoria-natureza",
+      "proxy": 0.0417
+    },
+    "base_zeroshot/ho-lgpd-objetivo": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-lgpd-objetivo",
+      "proxy": 0.0435
+    },
+    "base_zeroshot/ho-lgpd-encarregado": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-lgpd-encarregado",
+      "proxy": 0.2727
+    },
+    "base_zeroshot/ho-lgpd-bases": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-lgpd-bases",
+      "proxy": 0.3158
+    },
+    "base_zeroshot/ho-cpc-apelacao": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-cpc-apelacao",
+      "proxy": 0.375
+    },
+    "base_zeroshot/ho-cpc-embargos": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-cpc-embargos",
+      "proxy": 0.1579
+    },
+    "base_zeroshot/ho-cpc-recesso": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-cpc-recesso",
+      "proxy": 0.0625
+    },
+    "base_zeroshot/ho-licitacao-substituiu": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-licitacao-substituiu",
+      "proxy": 0.1
+    },
+    "base_zeroshot/ho-licitacao-habilitacao": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-licitacao-habilitacao",
+      "proxy": 0.1765
+    },
+    "base_zeroshot/ho-licitacao-direta": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-licitacao-direta",
+      "proxy": 0.4
+    },
+    "base_zeroshot/ho-procadm-destino-recurso": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-procadm-destino-recurso",
+      "proxy": 0.1818
+    },
+    "base_zeroshot/ho-procadm-lei": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-procadm-lei",
+      "proxy": 0.3182
+    },
+    "base_zeroshot/ho-gratuidade-recurso": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-gratuidade-recurso",
+      "proxy": 0.3529
+    },
+    "base_zeroshot/ho-gratuidade-pessoa-juridica": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-gratuidade-pessoa-juridica",
+      "proxy": 0.2941
+    },
+    "base_zeroshot/ho-lai-custo": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-lai-custo",
+      "proxy": 0.4545
+    },
+    "base_zeroshot/ho-8112-jornada": {
+      "arm": "base_zeroshot",
+      "case_id": "ho-8112-jornada",
+      "proxy": 0.2692
+    },
+    "base_fewshot/ho-lai-regra": {
+      "arm": "base_fewshot",
+      "case_id": "ho-lai-regra",
+      "proxy": 0.1
+    },
+    "base_fewshot/ho-lai-privacidade": {
+      "arm": "base_fewshot",
+      "case_id": "ho-lai-privacidade",
+      "proxy": 0.069
+    },
+    "base_fewshot/ho-8112-exercicio": {
+      "arm": "base_fewshot",
+      "case_id": "ho-8112-exercicio",
+      "proxy": 0.2222
+    },
+    "base_fewshot/ho-8112-suspensao": {
+      "arm": "base_fewshot",
+      "case_id": "ho-8112-suspensao",
+      "proxy": 0.4286
+    },
+    "base_fewshot/ho-8112-ferias": {
+      "arm": "base_fewshot",
+      "case_id": "ho-8112-ferias",
+      "proxy": 0.1111
+    },
+    "base_fewshot/ho-defensoria-garantias": {
+      "arm": "base_fewshot",
+      "case_id": "ho-defensoria-garantias",
+      "proxy": 0.037
+    },
+    "base_fewshot/ho-defensoria-natureza": {
+      "arm": "base_fewshot",
+      "case_id": "ho-defensoria-natureza",
+      "proxy": 0.1154
+    },
+    "base_fewshot/ho-lgpd-objetivo": {
+      "arm": "base_fewshot",
+      "case_id": "ho-lgpd-objetivo",
+      "proxy": 0.04
+    },
+    "base_fewshot/ho-lgpd-encarregado": {
+      "arm": "base_fewshot",
+      "case_id": "ho-lgpd-encarregado",
+      "proxy": 0.3333
+    },
+    "base_fewshot/ho-lgpd-bases": {
+      "arm": "base_fewshot",
+      "case_id": "ho-lgpd-bases",
+      "proxy": 0.25
+    },
+    "base_fewshot/ho-cpc-apelacao": {
+      "arm": "base_fewshot",
+      "case_id": "ho-cpc-apelacao",
+      "proxy": 0.2
+    },
+    "base_fewshot/ho-cpc-embargos": {
+      "arm": "base_fewshot",
+      "case_id": "ho-cpc-embargos",
+      "proxy": 0.0909
+    },
+    "base_fewshot/ho-cpc-recesso": {
+      "arm": "base_fewshot",
+      "case_id": "ho-cpc-recesso",
+      "proxy": 0.0
+    },
+    "base_fewshot/ho-licitacao-habilitacao": {
+      "arm": "base_fewshot",
+      "case_id": "ho-licitacao-habilitacao",
+      "proxy": 0.3125
+    },
+    "base_fewshot/ho-licitacao-direta": {
+      "arm": "base_fewshot",
+      "case_id": "ho-licitacao-direta",
+      "proxy": 0.1538
+    },
+    "base_fewshot/ho-procadm-destino-recurso": {
+      "arm": "base_fewshot",
+      "case_id": "ho-procadm-destino-recurso",
+      "proxy": 0.1579
+    },
+    "base_fewshot/ho-procadm-lei": {
+      "arm": "base_fewshot",
+      "case_id": "ho-procadm-lei",
+      "proxy": 0.3889
+    },
+    "base_fewshot/ho-gratuidade-recurso": {
+      "arm": "base_fewshot",
+      "case_id": "ho-gratuidade-recurso",
+      "proxy": 0.5714
+    },
+    "base_fewshot/ho-gratuidade-pessoa-juridica": {
+      "arm": "base_fewshot",
+      "case_id": "ho-gratuidade-pessoa-juridica",
+      "proxy": 0.1
+    },
+    "base_fewshot/ho-lai-custo": {
+      "arm": "base_fewshot",
+      "case_id": "ho-lai-custo",
+      "proxy": 0.3125
+    },
+    "base_fewshot/ho-8112-jornada": {
+      "arm": "base_fewshot",
+      "case_id": "ho-8112-jornada",
+      "proxy": 0.3
+    },
+    "lora0/ho-lai-regra": {
+      "arm": "lora0",
+      "case_id": "ho-lai-regra",
+      "proxy": 0.5
+    },
+    "lora0/ho-lai-privacidade": {
+      "arm": "lora0",
+      "case_id": "ho-lai-privacidade",
+      "proxy": 1.0
+    },
+    "lora0/ho-8112-exercicio": {
+      "arm": "lora0",
+      "case_id": "ho-8112-exercicio",
+      "proxy": 1.0
+    },
+    "lora0/ho-8112-suspensao": {
+      "arm": "lora0",
+      "case_id": "ho-8112-suspensao",
+      "proxy": 1.0
+    },
+    "lora0/ho-8112-ferias": {
+      "arm": "lora0",
+      "case_id": "ho-8112-ferias",
+      "proxy": 1.0
+    },
+    "lora0/ho-defensoria-garantias": {
+      "arm": "lora0",
+      "case_id": "ho-defensoria-garantias",
+      "proxy": 1.0
+    },
+    "lora0/ho-defensoria-natureza": {
+      "arm": "lora0",
+      "case_id": "ho-defensoria-natureza",
+      "proxy": 0.3333
+    },
+    "lora0/ho-lgpd-encarregado": {
+      "arm": "lora0",
+      "case_id": "ho-lgpd-encarregado",
+      "proxy": 0.8125
+    },
+    "lora0/ho-lgpd-bases": {
+      "arm": "lora0",
+      "case_id": "ho-lgpd-bases",
+      "proxy": 1.0
+    },
+    "lora0/ho-cpc-apelacao": {
+      "arm": "lora0",
+      "case_id": "ho-cpc-apelacao",
+      "proxy": 1.0
+    },
+    "lora0/ho-cpc-embargos": {
+      "arm": "lora0",
+      "case_id": "ho-cpc-embargos",
+      "proxy": 1.0
+    },
+    "lora0/ho-cpc-recesso": {
+      "arm": "lora0",
+      "case_id": "ho-cpc-recesso",
+      "proxy": 1.0
+    },
+    "lora0/ho-licitacao-habilitacao": {
+      "arm": "lora0",
+      "case_id": "ho-licitacao-habilitacao",
+      "proxy": 1.0
+    },
+    "lora0/ho-licitacao-direta": {
+      "arm": "lora0",
+      "case_id": "ho-licitacao-direta",
+      "proxy": 1.0
+    },
+    "lora0/ho-procadm-destino-recurso": {
+      "arm": "lora0",
+      "case_id": "ho-procadm-destino-recurso",
+      "proxy": 1.0
+    },
+    "lora0/ho-procadm-lei": {
+      "arm": "lora0",
+      "case_id": "ho-procadm-lei",
+      "proxy": 0.0
+    },
+    "lora0/ho-gratuidade-recurso": {
+      "arm": "lora0",
+      "case_id": "ho-gratuidade-recurso",
+      "proxy": 1.0
+    },
+    "lora0/ho-gratuidade-pessoa-juridica": {
+      "arm": "lora0",
+      "case_id": "ho-gratuidade-pessoa-juridica",
+      "proxy": 0.9167
+    },
+    "lora0/ho-lai-custo": {
+      "arm": "lora0",
+      "case_id": "ho-lai-custo",
+      "proxy": 0.4
+    },
+    "lora0/ho-8112-jornada": {
+      "arm": "lora0",
+      "case_id": "ho-8112-jornada",
+      "proxy": 1.0
+    },
+    "lora5/ho-lai-regra": {
+      "arm": "lora5",
+      "case_id": "ho-lai-regra",
+      "proxy": 0.0833
+    },
+    "lora5/ho-lai-privacidade": {
+      "arm": "lora5",
+      "case_id": "ho-lai-privacidade",
+      "proxy": 1.0
+    },
+    "lora5/ho-8112-exercicio": {
+      "arm": "lora5",
+      "case_id": "ho-8112-exercicio",
+      "proxy": 1.0
+    },
+    "lora5/ho-8112-suspensao": {
+      "arm": "lora5",
+      "case_id": "ho-8112-suspensao",
+      "proxy": 1.0
+    },
+    "lora5/ho-8112-ferias": {
+      "arm": "lora5",
+      "case_id": "ho-8112-ferias",
+      "proxy": 1.0
+    },
+    "lora5/ho-defensoria-garantias": {
+      "arm": "lora5",
+      "case_id": "ho-defensoria-garantias",
+      "proxy": 0.0
+    },
+    "lora5/ho-defensoria-natureza": {
+      "arm": "lora5",
+      "case_id": "ho-defensoria-natureza",
+      "proxy": 0.5
+    },
+    "lora5/ho-lgpd-encarregado": {
+      "arm": "lora5",
+      "case_id": "ho-lgpd-encarregado",
+      "proxy": 0.8182
+    },
+    "lora5/ho-lgpd-bases": {
+      "arm": "lora5",
+      "case_id": "ho-lgpd-bases",
+      "proxy": 1.0
+    },
+    "lora5/ho-cpc-apelacao": {
+      "arm": "lora5",
+      "case_id": "ho-cpc-apelacao",
+      "proxy": 1.0
+    },
+    "lora5/ho-cpc-embargos": {
+      "arm": "lora5",
+      "case_id": "ho-cpc-embargos",
+      "proxy": 1.0
+    },
+    "lora5/ho-cpc-recesso": {
+      "arm": "lora5",
+      "case_id": "ho-cpc-recesso",
+      "proxy": 1.0
+    },
+    "lora5/ho-licitacao-habilitacao": {
+      "arm": "lora5",
+      "case_id": "ho-licitacao-habilitacao",
+      "proxy": 1.0
+    },
+    "lora5/ho-licitacao-direta": {
+      "arm": "lora5",
+      "case_id": "ho-licitacao-direta",
+      "proxy": 1.0
+    },
+    "lora5/ho-procadm-destino-recurso": {
+      "arm": "lora5",
+      "case_id": "ho-procadm-destino-recurso",
+      "proxy": 1.0
+    },
+    "lora5/ho-procadm-lei": {
+      "arm": "lora5",
+      "case_id": "ho-procadm-lei",
+      "proxy": 0.0
+    },
+    "lora5/ho-gratuidade-recurso": {
+      "arm": "lora5",
+      "case_id": "ho-gratuidade-recurso",
+      "proxy": 1.0
+    },
+    "lora5/ho-gratuidade-pessoa-juridica": {
+      "arm": "lora5",
+      "case_id": "ho-gratuidade-pessoa-juridica",
+      "proxy": 0.9167
+    },
+    "lora5/ho-lai-custo": {
+      "arm": "lora5",
+      "case_id": "ho-lai-custo",
+      "proxy": 0.375
+    },
+    "lora5/ho-8112-jornada": {
+      "arm": "lora5",
+      "case_id": "ho-8112-jornada",
+      "proxy": 1.0
+    },
+    "lora10/ho-lai-regra": {
+      "arm": "lora10",
+      "case_id": "ho-lai-regra",
+      "proxy": 0.0833
+    },
+    "lora10/ho-lai-privacidade": {
+      "arm": "lora10",
+      "case_id": "ho-lai-privacidade",
+      "proxy": 1.0
+    },
+    "lora10/ho-8112-exercicio": {
+      "arm": "lora10",
+      "case_id": "ho-8112-exercicio",
+      "proxy": 1.0
+    },
+    "lora10/ho-8112-ferias": {
+      "arm": "lora10",
+      "case_id": "ho-8112-ferias",
+      "proxy": 1.0
+    },
+    "lora10/ho-defensoria-garantias": {
+      "arm": "lora10",
+      "case_id": "ho-defensoria-garantias",
+      "proxy": 1.0
+    },
+    "lora10/ho-defensoria-natureza": {
+      "arm": "lora10",
+      "case_id": "ho-defensoria-natureza",
+      "proxy": 0.0
+    },
+    "lora10/ho-lgpd-encarregado": {
+      "arm": "lora10",
+      "case_id": "ho-lgpd-encarregado",
+      "proxy": 1.0
+    },
+    "lora10/ho-lgpd-bases": {
+      "arm": "lora10",
+      "case_id": "ho-lgpd-bases",
+      "proxy": 1.0
+    },
+    "lora10/ho-cpc-apelacao": {
+      "arm": "lora10",
+      "case_id": "ho-cpc-apelacao",
+      "proxy": 1.0
+    },
+    "lora10/ho-cpc-embargos": {
+      "arm": "lora10",
+      "case_id": "ho-cpc-embargos",
+      "proxy": 1.0
+    },
+    "lora10/ho-licitacao-habilitacao": {
+      "arm": "lora10",
+      "case_id": "ho-licitacao-habilitacao",
+      "proxy": 1.0
+    },
+    "lora10/ho-licitacao-direta": {
+      "arm": "lora10",
+      "case_id": "ho-licitacao-direta",
+      "proxy": 1.0
+    },
+    "lora10/ho-procadm-destino-recurso": {
+      "arm": "lora10",
+      "case_id": "ho-procadm-destino-recurso",
+      "proxy": 1.0
+    },
+    "lora10/ho-procadm-lei": {
+      "arm": "lora10",
+      "case_id": "ho-procadm-lei",
+      "proxy": 0.0
+    },
+    "lora10/ho-gratuidade-recurso": {
+      "arm": "lora10",
+      "case_id": "ho-gratuidade-recurso",
+      "proxy": 1.0
+    },
+    "lora10/ho-gratuidade-pessoa-juridica": {
+      "arm": "lora10",
+      "case_id": "ho-gratuidade-pessoa-juridica",
+      "proxy": 0.6
+    },
+    "lora10/ho-8112-jornada": {
+      "arm": "lora10",
+      "case_id": "ho-8112-jornada",
+      "proxy": 1.0
+    }
+  },
+  "runs": {
+    "qwen3-32b": {
+      "model": "qwen3:32b",
+      "digest": "030ee887880fc378860c2dd35101da424377520441ae4bfe7be6deff8ade7840",
+      "ollama_version": "0.35.1",
+      "options": {
+        "temperature": 0.0,
+        "seed": 0
+      },
+      "think": false,
+      "prompt_sha256": "db704bc34c950dbc9eb5f723550b3d4f4ec03015ab8b10fb2464d08d7aa42fcf",
+      "created": "2026-10-09",
+      "scores": {
+        "base_zeroshot/ho-lai-regra": 1.0,
+        "base_zeroshot/ho-lai-privacidade": 0.0,
+        "base_zeroshot/ho-8112-exercicio": 0.75,
+        "base_zeroshot/ho-8112-suspensao": 0.0,
+        "base_zeroshot/ho-8112-ferias": 1.0,
+        "base_zeroshot/ho-defensoria-garantias": 1.0,
+        "base_zeroshot/ho-defensoria-natureza": 0.0,
+        "base_zeroshot/ho-lgpd-objetivo": 0.0,
+        "base_zeroshot/ho-lgpd-encarregado": 0.75,
+        "base_zeroshot/ho-lgpd-bases": 1.0,
+        "base_zeroshot/ho-cpc-apelacao": 1.0,
+        "base_zeroshot/ho-cpc-embargos": 1.0,
+        "base_zeroshot/ho-cpc-recesso": 1.0,
+        "base_zeroshot/ho-licitacao-substituiu": 0.0,
+        "base_zeroshot/ho-licitacao-habilitacao": 1.0,
+        "base_zeroshot/ho-licitacao-direta": 0.25,
+        "base_zeroshot/ho-procadm-destino-recurso": 1.0,
+        "base_zeroshot/ho-procadm-lei": 1.0,
+        "base_zeroshot/ho-gratuidade-recurso": 0.0,
+        "base_zeroshot/ho-gratuidade-pessoa-juridica": 1.0,
+        "base_zeroshot/ho-lai-custo": 1.0,
+        "base_zeroshot/ho-8112-jornada": 0.25,
+        "base_fewshot/ho-lai-regra": 0.75,
+        "base_fewshot/ho-lai-privacidade": 0.0,
+        "base_fewshot/ho-8112-exercicio": 1.0,
+        "base_fewshot/ho-8112-suspensao": 0.0,
+        "base_fewshot/ho-8112-ferias": 1.0,
+        "base_fewshot/ho-defensoria-garantias": 1.0,
+        "base_fewshot/ho-defensoria-natureza": 0.0,
+        "base_fewshot/ho-lgpd-objetivo": 0.0,
+        "base_fewshot/ho-lgpd-encarregado": 0.75,
+        "base_fewshot/ho-lgpd-bases": 0.75,
+        "base_fewshot/ho-cpc-apelacao": 0.0,
+        "base_fewshot/ho-cpc-embargos": 0.25,
+        "base_fewshot/ho-cpc-recesso": 0.25,
+        "base_fewshot/ho-licitacao-habilitacao": 1.0,
+        "base_fewshot/ho-licitacao-direta": 0.0,
+        "base_fewshot/ho-procadm-destino-recurso": 1.0,
+        "base_fewshot/ho-procadm-lei": 0.0,
+        "base_fewshot/ho-gratuidade-recurso": 1.0,
+        "base_fewshot/ho-gratuidade-pessoa-juridica": 0.25,
+        "base_fewshot/ho-lai-custo": 1.0,
+        "base_fewshot/ho-8112-jornada": 1.0,
+        "lora0/ho-lai-regra": 0.75,
+        "lora0/ho-lai-privacidade": 1.0,
+        "lora0/ho-8112-exercicio": 1.0,
+        "lora0/ho-8112-suspensao": 0.0,
+        "lora0/ho-8112-ferias": 1.0,
+        "lora0/ho-defensoria-garantias": 1.0,
+        "lora0/ho-defensoria-natureza": 0.0,
+        "lora0/ho-lgpd-encarregado": 1.0,
+        "lora0/ho-lgpd-bases": 1.0,
+        "lora0/ho-cpc-apelacao": 1.0,
+        "lora0/ho-cpc-embargos": 1.0,
+        "lora0/ho-cpc-recesso": 1.0,
+        "lora0/ho-licitacao-habilitacao": 1.0,
+        "lora0/ho-licitacao-direta": 1.0,
+        "lora0/ho-procadm-destino-recurso": 1.0,
+        "lora0/ho-procadm-lei": 0.0,
+        "lora0/ho-gratuidade-recurso": 1.0,
+        "lora0/ho-gratuidade-pessoa-juridica": 0.75,
+        "lora0/ho-lai-custo": 1.0,
+        "lora0/ho-8112-jornada": 1.0,
+        "lora5/ho-lai-regra": 1.0,
+        "lora5/ho-lai-privacidade": 1.0,
+        "lora5/ho-8112-exercicio": 1.0,
+        "lora5/ho-8112-suspensao": 1.0,
+        "lora5/ho-8112-ferias": 1.0,
+        "lora5/ho-defensoria-garantias": 1.0,
+        "lora5/ho-defensoria-natureza": 0.0,
+        "lora5/ho-lgpd-encarregado": 1.0,
+        "lora5/ho-lgpd-bases": 1.0,
+        "lora5/ho-cpc-apelacao": 1.0,
+        "lora5/ho-cpc-embargos": 1.0,
+        "lora5/ho-cpc-recesso": 1.0,
+        "lora5/ho-licitacao-habilitacao": 1.0,
+        "lora5/ho-licitacao-direta": 1.0,
+        "lora5/ho-procadm-destino-recurso": 1.0,
+        "lora5/ho-procadm-lei": 0.0,
+        "lora5/ho-gratuidade-recurso": 1.0,
+        "lora5/ho-gratuidade-pessoa-juridica": 0.75,
+        "lora5/ho-lai-custo": 1.0,
+        "lora5/ho-8112-jornada": 1.0,
+        "lora10/ho-lai-regra": 1.0,
+        "lora10/ho-lai-privacidade": 1.0,
+        "lora10/ho-8112-exercicio": 1.0,
+        "lora10/ho-8112-ferias": 1.0,
+        "lora10/ho-defensoria-garantias": 1.0,
+        "lora10/ho-defensoria-natureza": 0.0,
+        "lora10/ho-lgpd-encarregado": 1.0,
+        "lora10/ho-lgpd-bases": 1.0,
+        "lora10/ho-cpc-apelacao": 1.0,
+        "lora10/ho-cpc-embargos": 1.0,
+        "lora10/ho-licitacao-habilitacao": 1.0,
+        "lora10/ho-licitacao-direta": 1.0,
+        "lora10/ho-procadm-destino-recurso": 0.0,
+        "lora10/ho-procadm-lei": 0.0,
+        "lora10/ho-gratuidade-recurso": 1.0,
+        "lora10/ho-gratuidade-pessoa-juridica": 0.75,
+        "lora10/ho-8112-jornada": 1.0
+      }
+    },
+    "gemma4-31b": {
+      "model": "gemma4:31b-it-qat",
+      "digest": "e0812a55773bfeac846b2d605b4d93638b8dfa7119d9587f3d91475afc78185e",
+      "ollama_version": "0.35.1",
+      "options": {
+        "temperature": 0.0,
+        "seed": 0
+      },
+      "think": false,
+      "prompt_sha256": "db704bc34c950dbc9eb5f723550b3d4f4ec03015ab8b10fb2464d08d7aa42fcf",
+      "created": "2026-10-09",
+      "scores": {
+        "base_zeroshot/ho-lai-regra": 1.0,
+        "base_zeroshot/ho-lai-privacidade": 0.25,
+        "base_zeroshot/ho-8112-exercicio": 0.5,
+        "base_zeroshot/ho-8112-suspensao": 0.0,
+        "base_zeroshot/ho-8112-ferias": 0.5,
+        "base_zeroshot/ho-defensoria-garantias": 1.0,
+        "base_zeroshot/ho-defensoria-natureza": 0.0,
+        "base_zeroshot/ho-lgpd-objetivo": 0.0,
+        "base_zeroshot/ho-lgpd-encarregado": 0.5,
+        "base_zeroshot/ho-lgpd-bases": 1.0,
+        "base_zeroshot/ho-cpc-apelacao": 1.0,
+        "base_zeroshot/ho-cpc-embargos": 0.75,
+        "base_zeroshot/ho-cpc-recesso": 1.0,
+        "base_zeroshot/ho-licitacao-substituiu": 0.0,
+        "base_zeroshot/ho-licitacao-habilitacao": 0.5,
+        "base_zeroshot/ho-licitacao-direta": 0.0,
+        "base_zeroshot/ho-procadm-destino-recurso": 1.0,
+        "base_zeroshot/ho-procadm-lei": 1.0,
+        "base_zeroshot/ho-gratuidade-recurso": 0.0,
+        "base_zeroshot/ho-gratuidade-pessoa-juridica": 1.0,
+        "base_zeroshot/ho-lai-custo": 1.0,
+        "base_zeroshot/ho-8112-jornada": 0.25,
+        "base_fewshot/ho-lai-regra": 0.5,
+        "base_fewshot/ho-lai-privacidade": 0.25,
+        "base_fewshot/ho-8112-exercicio": 0.5,
+        "base_fewshot/ho-8112-suspensao": 0.0,
+        "base_fewshot/ho-8112-ferias": 1.0,
+        "base_fewshot/ho-defensoria-garantias": 1.0,
+        "base_fewshot/ho-defensoria-natureza": 0.0,
+        "base_fewshot/ho-lgpd-objetivo": 0.0,
+        "base_fewshot/ho-lgpd-encarregado": 0.75,
+        "base_fewshot/ho-lgpd-bases": 0.5,
+        "base_fewshot/ho-cpc-apelacao": 0.25,
+        "base_fewshot/ho-cpc-embargos": 0.0,
+        "base_fewshot/ho-cpc-recesso": 0.25,
+        "base_fewshot/ho-licitacao-habilitacao": 1.0,
+        "base_fewshot/ho-licitacao-direta": 0.0,
+        "base_fewshot/ho-procadm-destino-recurso": 0.5,
+        "base_fewshot/ho-procadm-lei": 0.0,
+        "base_fewshot/ho-gratuidade-recurso": 0.5,
+        "base_fewshot/ho-gratuidade-pessoa-juridica": 0.25,
+        "base_fewshot/ho-lai-custo": 1.0,
+        "base_fewshot/ho-8112-jornada": 0.75,
+        "lora0/ho-lai-regra": 1.0,
+        "lora0/ho-lai-privacidade": 1.0,
+        "lora0/ho-8112-exercicio": 1.0,
+        "lora0/ho-8112-suspensao": 0.0,
+        "lora0/ho-8112-ferias": 1.0,
+        "lora0/ho-defensoria-garantias": 1.0,
+        "lora0/ho-defensoria-natureza": 0.0,
+        "lora0/ho-lgpd-encarregado": 0.5,
+        "lora0/ho-lgpd-bases": 1.0,
+        "lora0/ho-cpc-apelacao": 1.0,
+        "lora0/ho-cpc-embargos": 1.0,
+        "lora0/ho-cpc-recesso": 1.0,
+        "lora0/ho-licitacao-habilitacao": 1.0,
+        "lora0/ho-licitacao-direta": 1.0,
+        "lora0/ho-procadm-destino-recurso": 1.0,
+        "lora0/ho-procadm-lei": 1.0,
+        "lora0/ho-gratuidade-recurso": 1.0,
+        "lora0/ho-gratuidade-pessoa-juridica": 0.5,
+        "lora0/ho-lai-custo": 1.0,
+        "lora0/ho-8112-jornada": 1.0,
+        "lora5/ho-lai-regra": 1.0,
+        "lora5/ho-lai-privacidade": 1.0,
+        "lora5/ho-8112-exercicio": 1.0,
+        "lora5/ho-8112-suspensao": 1.0,
+        "lora5/ho-8112-ferias": 1.0,
+        "lora5/ho-defensoria-garantias": 1.0,
+        "lora5/ho-defensoria-natureza": 0.0,
+        "lora5/ho-lgpd-encarregado": 1.0,
+        "lora5/ho-lgpd-bases": 1.0,
+        "lora5/ho-cpc-apelacao": 1.0,
+        "lora5/ho-cpc-embargos": 1.0,
+        "lora5/ho-cpc-recesso": 1.0,
+        "lora5/ho-licitacao-habilitacao": 1.0,
+        "lora5/ho-licitacao-direta": 1.0,
+        "lora5/ho-procadm-destino-recurso": 1.0,
+        "lora5/ho-procadm-lei": 1.0,
+        "lora5/ho-gratuidade-recurso": 1.0,
+        "lora5/ho-gratuidade-pessoa-juridica": 0.5,
+        "lora5/ho-lai-custo": 1.0,
+        "lora5/ho-8112-jornada": 1.0,
+        "lora10/ho-lai-regra": 1.0,
+        "lora10/ho-lai-privacidade": 1.0,
+        "lora10/ho-8112-exercicio": 1.0,
+        "lora10/ho-8112-ferias": 1.0,
+        "lora10/ho-defensoria-garantias": 1.0,
+        "lora10/ho-defensoria-natureza": 0.0,
+        "lora10/ho-lgpd-encarregado": 1.0,
+        "lora10/ho-lgpd-bases": 1.0,
+        "lora10/ho-cpc-apelacao": 1.0,
+        "lora10/ho-cpc-embargos": 1.0,
+        "lora10/ho-licitacao-habilitacao": 1.0,
+        "lora10/ho-licitacao-direta": 1.0,
+        "lora10/ho-procadm-destino-recurso": 1.0,
+        "lora10/ho-procadm-lei": 1.0,
+        "lora10/ho-gratuidade-recurso": 1.0,
+        "lora10/ho-gratuidade-pessoa-juridica": 0.5,
+        "lora10/ho-8112-jornada": 1.0
+      }
+    },
+    "qwen3-32b-repeat": {
+      "model": "qwen3:32b",
+      "digest": "030ee887880fc378860c2dd35101da424377520441ae4bfe7be6deff8ade7840",
+      "ollama_version": "0.35.1",
+      "options": {
+        "temperature": 0.0,
+        "seed": 0
+      },
+      "think": false,
+      "prompt_sha256": "db704bc34c950dbc9eb5f723550b3d4f4ec03015ab8b10fb2464d08d7aa42fcf",
+      "created": "2026-10-09",
+      "scores": {
+        "base_zeroshot/ho-lai-regra": 1.0,
+        "base_zeroshot/ho-lai-privacidade": 0.0,
+        "base_zeroshot/ho-8112-exercicio": 0.75,
+        "base_zeroshot/ho-8112-suspensao": 0.0,
+        "base_zeroshot/ho-8112-ferias": 1.0,
+        "base_zeroshot/ho-defensoria-garantias": 1.0,
+        "base_zeroshot/ho-defensoria-natureza": 0.0,
+        "base_zeroshot/ho-lgpd-objetivo": 0.0,
+        "base_zeroshot/ho-lgpd-encarregado": 0.75,
+        "base_zeroshot/ho-lgpd-bases": 1.0,
+        "base_zeroshot/ho-cpc-apelacao": 1.0,
+        "base_zeroshot/ho-cpc-embargos": 1.0,
+        "base_zeroshot/ho-cpc-recesso": 1.0,
+        "base_zeroshot/ho-licitacao-substituiu": 0.0,
+        "base_zeroshot/ho-licitacao-habilitacao": 1.0,
+        "base_zeroshot/ho-licitacao-direta": 0.25,
+        "base_zeroshot/ho-procadm-destino-recurso": 1.0,
+        "base_zeroshot/ho-procadm-lei": 1.0,
+        "base_zeroshot/ho-gratuidade-recurso": 0.0,
+        "base_zeroshot/ho-gratuidade-pessoa-juridica": 1.0,
+        "base_zeroshot/ho-lai-custo": 1.0,
+        "base_zeroshot/ho-8112-jornada": 0.25,
+        "base_fewshot/ho-lai-regra": 0.75,
+        "base_fewshot/ho-lai-privacidade": 0.0,
+        "base_fewshot/ho-8112-exercicio": 1.0,
+        "base_fewshot/ho-8112-suspensao": 0.0,
+        "base_fewshot/ho-8112-ferias": 1.0,
+        "base_fewshot/ho-defensoria-garantias": 1.0,
+        "base_fewshot/ho-defensoria-natureza": 0.0,
+        "base_fewshot/ho-lgpd-objetivo": 0.0,
+        "base_fewshot/ho-lgpd-encarregado": 0.75,
+        "base_fewshot/ho-lgpd-bases": 0.75,
+        "base_fewshot/ho-cpc-apelacao": 0.0,
+        "base_fewshot/ho-cpc-embargos": 0.25,
+        "base_fewshot/ho-cpc-recesso": 0.25,
+        "base_fewshot/ho-licitacao-habilitacao": 1.0,
+        "base_fewshot/ho-licitacao-direta": 0.0,
+        "base_fewshot/ho-procadm-destino-recurso": 1.0,
+        "base_fewshot/ho-procadm-lei": 0.0,
+        "base_fewshot/ho-gratuidade-recurso": 1.0,
+        "base_fewshot/ho-gratuidade-pessoa-juridica": 0.25,
+        "base_fewshot/ho-lai-custo": 1.0,
+        "base_fewshot/ho-8112-jornada": 1.0,
+        "lora0/ho-lai-regra": 0.75,
+        "lora0/ho-lai-privacidade": 1.0,
+        "lora0/ho-8112-exercicio": 1.0,
+        "lora0/ho-8112-suspensao": 0.0,
+        "lora0/ho-8112-ferias": 1.0,
+        "lora0/ho-defensoria-garantias": 1.0,
+        "lora0/ho-defensoria-natureza": 0.0,
+        "lora0/ho-lgpd-encarregado": 1.0,
+        "lora0/ho-lgpd-bases": 1.0,
+        "lora0/ho-cpc-apelacao": 1.0,
+        "lora0/ho-cpc-embargos": 1.0,
+        "lora0/ho-cpc-recesso": 1.0,
+        "lora0/ho-licitacao-habilitacao": 1.0,
+        "lora0/ho-licitacao-direta": 1.0,
+        "lora0/ho-procadm-destino-recurso": 1.0,
+        "lora0/ho-procadm-lei": 0.0,
+        "lora0/ho-gratuidade-recurso": 1.0,
+        "lora0/ho-gratuidade-pessoa-juridica": 0.75,
+        "lora0/ho-lai-custo": 1.0,
+        "lora0/ho-8112-jornada": 1.0,
+        "lora5/ho-lai-regra": 1.0,
+        "lora5/ho-lai-privacidade": 1.0,
+        "lora5/ho-8112-exercicio": 1.0,
+        "lora5/ho-8112-suspensao": 1.0,
+        "lora5/ho-8112-ferias": 1.0,
+        "lora5/ho-defensoria-garantias": 1.0,
+        "lora5/ho-defensoria-natureza": 0.0,
+        "lora5/ho-lgpd-encarregado": 1.0,
+        "lora5/ho-lgpd-bases": 1.0,
+        "lora5/ho-cpc-apelacao": 1.0,
+        "lora5/ho-cpc-embargos": 1.0,
+        "lora5/ho-cpc-recesso": 1.0,
+        "lora5/ho-licitacao-habilitacao": 1.0,
+        "lora5/ho-licitacao-direta": 1.0,
+        "lora5/ho-procadm-destino-recurso": 1.0,
+        "lora5/ho-procadm-lei": 0.0,
+        "lora5/ho-gratuidade-recurso": 1.0,
+        "lora5/ho-gratuidade-pessoa-juridica": 0.75,
+        "lora5/ho-lai-custo": 1.0,
+        "lora5/ho-8112-jornada": 1.0,
+        "lora10/ho-lai-regra": 1.0,
+        "lora10/ho-lai-privacidade": 1.0,
+        "lora10/ho-8112-exercicio": 1.0,
+        "lora10/ho-8112-ferias": 1.0,
+        "lora10/ho-defensoria-garantias": 1.0,
+        "lora10/ho-defensoria-natureza": 0.0,
+        "lora10/ho-lgpd-encarregado": 1.0,
+        "lora10/ho-lgpd-bases": 1.0,
+        "lora10/ho-cpc-apelacao": 1.0,
+        "lora10/ho-cpc-embargos": 1.0,
+        "lora10/ho-licitacao-habilitacao": 1.0,
+        "lora10/ho-licitacao-direta": 1.0,
+        "lora10/ho-procadm-destino-recurso": 0.0,
+        "lora10/ho-procadm-lei": 0.0,
+        "lora10/ho-gratuidade-recurso": 1.0,
+        "lora10/ho-gratuidade-pessoa-juridica": 0.75,
+        "lora10/ho-8112-jornada": 1.0
+      }
+    }
+  }
+}

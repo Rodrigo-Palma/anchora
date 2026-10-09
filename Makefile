@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install lint fmt fmt-check type test eval eval-honest ablation adversarial bench check api dataset pipeline clean
+.PHONY: help install lint fmt fmt-check type test eval eval-honest calibration ablation adversarial adversarial-external bench check api dataset pipeline clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -30,6 +30,9 @@ eval-honest: ## Re-score frozen held-out generations + replay the promotion gate
 	uv run python scripts/score_generations.py --check
 	uv run python scripts/gate_promotion.py
 
+calibration: ## Recompute proxy-vs-judge agreement from frozen judge scores (no model)
+	uv run python scripts/calibrate_judge.py --check
+
 ablation: ## Measure retrieval modes (dense vs bm25 vs hybrid) on golden + holdout
 	uv run python scripts/ablation_retrieval.py
 
@@ -42,7 +45,7 @@ adversarial-external: ## Replay a public prompt-injection set (deepset, frozen) 
 bench: ## Benchmark offline pipeline latency (p50/p95 per stage) with a regression gate
 	uv run python scripts/benchmark.py --max-p95-ms 250
 
-check: lint fmt-check type test eval eval-honest adversarial ## Run the full local CI gate
+check: lint fmt-check type test eval eval-honest calibration adversarial ## Run the full local CI gate
 
 dataset: ## Build the fine-tune instruction dataset
 	uv run python scripts/build_finetune_dataset.py

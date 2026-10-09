@@ -3,8 +3,8 @@
 DeepEval / RAGAS compute these with an LLM judge. That is great locally but is
 non-deterministic and (with hosted judges) costs money — unfit for a CI gate.
 These lexical proxies are honest, reproducible stand-ins that gate CI for free;
-the real LLM-judge versions can be run locally via the Ollama judge (see
-``scripts/compare_evals.py``).
+their agreement with local LLM judges is measured in
+``scripts/calibrate_judge.py`` (see ``docs/eval-calibration.md``).
 
 All metrics return a float in [0, 1].
 """

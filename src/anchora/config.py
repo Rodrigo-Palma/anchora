@@ -46,7 +46,8 @@ class Settings(BaseSettings):
     ood_min_overlap: int = 2
     ood_similarity_threshold: float = 0.0
 
-    # Eval gate: CI fails if measured faithfulness drops below this.
+    # Eval gate: CI fails if mean proxy faithfulness drops below this. Checked
+    # against two LLM judges and kept; see docs/adr/0007-faithfulness-threshold.md.
     faithfulness_threshold: float = 0.70
 
 

@@ -32,8 +32,9 @@ of answering.** Components:
   [46-attack adversarial suite](#adversarial-guardrail-suite) (44 gated) that
   gates CI;
 - **reproducible evals in CI**: deterministic lexical proxies gate the build
-  with no model and no network, and a [calibration script](docs/eval-calibration.md)
-  compares them with a local LLM judge to locate their blind spots;
+  with no model and no network, [calibrated against two local LLM judges](docs/eval-calibration.md)
+  (Spearman about 0.49 with either judge, 0.78 between the judges), with the
+  judge scores frozen so CI re-checks the calibration offline;
 - **tracing**: every answer carries a `trace_id` and per-stage timings, with
   a [latency benchmark](#latency) that gates against p95 regressions;
 - **a fine-tuning study with a found leak**: a first result of 0.92 that turned
@@ -182,9 +183,17 @@ Every response echoes an `x-request-id` header (minted if the caller omits it).
 | `faithfulness` | how much of the answer is supported by the retrieved context |
 | `answer_relevance` | how much of the question's intent the answer covers |
 
-The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0** or if **average faithfulness < 0.70** (`faithfulness_threshold`). Both thresholds are hand-picked, not derived from data. Today the gate passes with recall 24/24 (Wilson 95% [0.86, 1.00]); those 24 questions are the ones the EN→PT glossary bridge was fit to, so this is a regression check on known questions, not a measure of retrieval on new ones (for that, see the holdout rows below). The **LLM-judge** versions (DeepEval/RAGAS via Ollama) can be run locally with `scripts/compare_evals.py`.
+The *gate* (`uv run anchora eval`) fails the build if **retrieval recall < 1.0** or if **average faithfulness < 0.70** (`faithfulness_threshold`). The recall threshold is hand-picked. The faithfulness floor was checked against two LLM judges and kept: any floor between 0.21 and 0.78 separates the measured systems the way both judges do, and the data cannot pick a point inside that range ([ADR 7](docs/adr/0007-faithfulness-threshold.md)). Today the gate passes with recall 24/24 (Wilson 95% [0.86, 1.00]); those 24 questions are the ones the EN→PT glossary bridge was fit to, so this is a regression check on known questions, not a measure of retrieval on new ones (for that, see the holdout rows below). The LLM-judge comparison lives in `scripts/calibrate_judge.py`: `--run` scores with a local Ollama judge, and `make calibration` re-checks the frozen scores offline.
 
-> Why lexical proxies in CI? An LLM *judge* is non-deterministic and (for hosted judges) costs money. The proxies give a reproducible floor; the local *judge* remains available for a closer read. How far the proxy tracks a judge, and where it is blind (negation, paraphrase, numbers), is measured in [`scripts/calibrate_judge.py`](scripts/calibrate_judge.py) and documented in [`docs/eval-calibration.md`](docs/eval-calibration.md).
+> Why lexical proxies in CI? An LLM *judge* is non-deterministic across models and versions and (for hosted judges) costs money. The proxies give a reproducible floor. How far that floor tracks a judge was measured on 100 held-out generations over 22 questions, scored by `qwen3:32b` and `gemma4:31b` (`make calibration`, [`docs/eval-calibration.md`](docs/eval-calibration.md)):
+>
+> | | Spearman [95% CI, by question] | Same verdict | Cohen kappa |
+> |---|---|---|---|
+> | proxy vs qwen3:32b | 0.498 [0.29, 0.68] | 66/100 at 0.70 | 0.36 |
+> | proxy vs gemma4:31b | 0.490 [0.25, 0.72] | 71/100 at 0.70 | 0.44 |
+> | qwen3:32b vs gemma4:31b | 0.778 [0.58, 0.92] | 83/100 | 0.60 |
+>
+> The proxy reaches about two thirds of the judge-to-judge agreement. It is much harsher than the judges on English answers over the Portuguese context, and it cannot see negation or wrong numbers.
 
 ### Retrieval: hybrid (BM25 + dense)
 
@@ -379,8 +388,10 @@ What this sample supports:
   With 6 out-of-corpus questions the smallest p any result could reach is 0.031
   (all 6 flipping the same way), so this holdout cannot establish an abstention
   effect. The 0.833 is what was measured, not a rate to expect.
-- **Faithfulness** intervals do not overlap, but it is a token-overlap proxy that
-  is blind to negation and wrong numbers ([calibration](docs/eval-calibration.md)).
+- **Faithfulness** intervals do not overlap on the proxy, and both LLM judges
+  agree on the direction, with a smaller gap: 0.52 vs 0.89 (`qwen3:32b`) and
+  0.43 vs 0.93 (`gemma4:31b`) on the non-abstaining answers. The proxy is
+  harsher on the base model's English answers ([calibration](docs/eval-calibration.md)).
 
 These numbers are **reproduced by CI without a GPU**. Generation needs Apple
 Silicon, but the real decoded outputs are frozen in
@@ -441,9 +452,12 @@ roadmap closes known gaps instead of chasing new surface:
 - [x] **Real-token SSE**: `POST /ask/stream` forwards tokens as Ollama decodes
   them and retracts an answer that fails the grounding check
   ([ADR 8](docs/adr/0008-streaming-with-output-validation.md)).
-- [ ] **Judge-calibrated thresholds**: once `scripts/calibrate_judge.py` has a
-  judged sample, set the CI faithfulness floor from measured proxy/judge agreement
-  rather than a hand-picked 0.70.
+- [x] **Judge-calibrated threshold**: measured against two judges; the floor
+  stays at 0.70 because no stable alternative emerged
+  ([ADR 7](docs/adr/0007-faithfulness-threshold.md)).
+- [ ] **Out-of-domain floor on the production embedder**: calibrate the dense
+  similarity floor, which could recover the 4 holdout questions the lexical
+  floor rejects ([ADR 6 addendum](docs/adr/0006-out-of-domain-floor.md#addendum-2026-10-09-measured-on-the-holdout-the-margin-does-not-hold)).
 
 **Deliberately out of scope** (stated so the boundaries are a choice, not an omission)
 
@@ -463,7 +477,7 @@ roadmap closes known gaps instead of chasing new surface:
 - **Datasheet**: [`data/README.md`](data/README.md): what every dataset is, how
   it was built, and the synthetic-PII note.
 - **Eval calibration**: [`docs/eval-calibration.md`](docs/eval-calibration.md):
-  proxy-vs-judge agreement and the proxy's blind spots.
+  proxy-vs-judge and judge-vs-judge agreement, measured, and the proxy's blind spots.
 - **Fine-tuning arc**: [`docs/finetuning-results.md`](docs/finetuning-results.md):
   the leak, the fix, the ratio sweep, the gate.
 
@@ -477,7 +491,8 @@ uv run pytest
 ```
 
 Or all at once: `make check` runs lint, format, types, tests, the eval gate,
-the frozen fine-tune replay and the adversarial suite. The latency benchmark
+the frozen fine-tune replay, the frozen judge calibration and the adversarial
+suite. The latency benchmark
 runs separately (`make bench`), as in CI.
 
 ## License
