@@ -18,6 +18,23 @@ Everything above runs **offline** (`--provider hash --no-llm`). The full
 walkthrough, including ingestion and the eval gate, is in
 [`docs/demo.md`](docs/demo.md).
 
+## Key results
+
+All measured; intervals are 95% Wilson for `k/n`. Every row is recomputed
+offline from committed data or frozen model outputs, with no model or GPU:
+`make check`, plus `make adversarial-external` and
+`uv run python scripts/ablation_retrieval.py --compare` for the external-set and
+nomic rows.
+
+| What | Result | Reading |
+|---|---|---|
+| Retrieval recall@4, 22 unseen questions | nomic hybrid **22/22** [0.85, 1.00]; offline `hash` hybrid 20/22 | not significantly different (McNemar p = 0.5) · [ablation](#retrieval-hybrid-bm25--dense) |
+| Correct citation, LoRA vs base few-shot (n=22) | **18/22 vs 11/22**, 7 vs 0 discordant | p = 0.016, not pre-registered (0.094 after Bonferroni) · [fine-tuning](#fine-tuning-the-train-set-leak-and-the-held-out-eval) |
+| CI faithfulness proxy vs LLM judges (100 answers) | Spearman **0.49** to either judge; judges agree 0.78 | the proxy is a regression floor, not a judge · [calibration](docs/eval-calibration.md) |
+| Public injection set (deepset, 60 attacks) | regex catches **1/60**; 58/60 still not answered | the domain floor held, not the detector · [external](#external-attacks-not-gated) |
+| In-house attack suite (46) | 44/46 handled, 2 documented gaps | written by the guardrails' author · [suite](#adversarial-guardrail-suite) |
+| Legitimate questions blocked | in-domain **4/46**; attack look-alikes 7/30 | the price of the guardrails · [false positives](#adversarial-guardrail-suite) |
+
 ## Scope
 
 The focus is **measuring when the system is wrong and making it abstain instead
