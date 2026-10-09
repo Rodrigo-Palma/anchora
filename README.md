@@ -1,5 +1,7 @@
 # anchora
 
+[![CI](https://github.com/Rodrigo-Palma/anchora/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/Rodrigo-Palma/anchora/actions/workflows/ci.yml)
+
 > Domain RAG agent for **Brazilian legal-administrative texts**: cited answers, tool use, *evals* in CI, guardrails, and LoRA *fine-tuning*. Runs locally on Ollama; no paid APIs.
 
 `anchora` ("anchor") is an agent that **anchors** every answer in the source documents: it retrieves passages from the corpus, answers by citing the source `[n]`, and abstains when the answer is not in the documents. Besides retrieval it **calls tools** (search and legal deadline calculation) and checks input and output with **deterministic guardrails**.
@@ -443,8 +445,11 @@ Full arc (every failed run, the leak, the fix, the ratio sweep, the gate) in
 Every item below is traceable to a limitation this repo already names, so the
 roadmap closes known gaps instead of chasing new surface:
 
-- [ ] **Recorded demo** (asciinema/GIF) of the CLI + API flow, linked from the README.
-- [ ] **Methodology write-up**: the eval leak and the holdout that replaced it, as a short post.
+- [x] **Offline demo** (GIF, `hash` embedder, no LLM) linked at the top of this README.
+- [ ] **Demo with the local models**: the same flow on Ollama, including a
+  streamed answer and a retraction.
+- [x] **Methodology write-up**: [`docs/methodology.md`](docs/methodology.md),
+  from the train-set leak to the calibration and the guardrail measurements.
 - [x] **Out-of-domain floor**: the abstain check now requires several distinct
   corpus tokens (not one incidental collision) and exposes an optional dense
   similarity threshold for the Ollama embedder, closing the single-token gap
@@ -469,9 +474,12 @@ roadmap closes known gaps instead of chasing new surface:
 
 ## Documentation
 
+- **Methodology**: [`docs/methodology.md`](docs/methodology.md): what each
+  number measures, the leak it replaced, and what remains open.
 - **Architecture decisions**: [`docs/adr/`](docs/adr/): deterministic proxies in
   CI, local-first, hand-rolled RAG, hybrid retrieval (RRF), 5-vs-10 abstention,
-  and the out-of-domain floor.
+  the out-of-domain floor, the faithfulness floor, and streaming with
+  retraction.
 - **Model card**: [`docs/model-card.md`](docs/model-card.md): the promoted LoRA
   adapter, its held-out metrics, limitations and governance.
 - **Datasheet**: [`data/README.md`](data/README.md): what every dataset is, how
