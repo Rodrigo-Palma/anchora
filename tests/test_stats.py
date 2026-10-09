@@ -6,9 +6,14 @@ import pytest
 
 from anchora.stats import (
     bootstrap_mean_interval,
+    cluster_bootstrap_interval,
+    cohen_kappa,
     format_mean,
     format_proportion,
     mcnemar_exact,
+    min_detectable_correlation,
+    pearson,
+    spearman,
     wilson_interval,
 )
 
@@ -94,3 +99,56 @@ def test_bootstrap_rejects_empty_input() -> None:
 def test_format_helpers() -> None:
     assert format_proportion(5, 6) == "5/6 = 0.833 [0.44, 0.97]"
     assert format_mean([0.5, 0.5]).startswith("0.500 [0.50, 0.50] (n=2)")
+
+
+# --- agreement statistics (judge calibration) --------------------------------
+
+
+def test_pearson_perfect_and_degenerate() -> None:
+    assert pearson([0.0, 0.5, 1.0], [0.0, 0.5, 1.0]) == pytest.approx(1.0)
+    assert pearson([0.0, 0.5, 1.0], [1.0, 0.5, 0.0]) == pytest.approx(-1.0)
+    constant = pearson([1.0, 1.0, 1.0], [0.0, 0.5, 1.0])
+    assert constant != constant  # NaN: correlation is undefined for a constant vector
+
+
+def test_spearman_is_rank_based_and_handles_ties() -> None:
+    assert spearman([1.0, 2.0, 3.0, 4.0], [1.0, 4.0, 9.0, 16.0]) == pytest.approx(1.0)
+    # scipy.stats.spearmanr([1, 2, 2, 3], [1, 3, 2, 4]).statistic == 0.9487
+    assert spearman([1.0, 2.0, 2.0, 3.0], [1.0, 3.0, 2.0, 4.0]) == pytest.approx(0.9487, abs=1e-4)
+
+
+def test_cohen_kappa_reference_values() -> None:
+    assert cohen_kappa([True, False, True, False], [True, False, True, False]) == 1.0
+    # 2x2 table a=20 b=5 c=10 d=15 -> po=0.70 pe=0.50 -> kappa=0.40
+    a = [True] * 25 + [False] * 25
+    b = [True] * 20 + [False] * 5 + [True] * 10 + [False] * 15
+    assert cohen_kappa(a, b) == pytest.approx(0.4)
+
+
+def test_cohen_kappa_is_nan_when_chance_agreement_is_total() -> None:
+    value = cohen_kappa([True, True], [True, True])
+    assert value != value
+
+
+def test_min_detectable_correlation_shrinks_with_n() -> None:
+    # Fisher-z approximation, alpha=0.05 two-sided, power=0.80.
+    assert min_detectable_correlation(22) == pytest.approx(0.567, abs=1e-3)
+    assert min_detectable_correlation(110) == pytest.approx(0.264, abs=1e-3)
+    with pytest.raises(ValueError):
+        min_detectable_correlation(3)
+
+
+def test_cluster_bootstrap_is_seeded_and_brackets_the_estimate() -> None:
+    clusters = ["a", "a", "b", "b", "c", "c", "d", "d", "e", "e"]
+    xs = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
+    ys = [0.0, 0.3, 0.2, 0.5, 0.4, 0.7, 0.6, 0.9, 0.8, 1.0]
+    first = cluster_bootstrap_interval(xs, ys, clusters, spearman, resamples=500)
+    second = cluster_bootstrap_interval(xs, ys, clusters, spearman, resamples=500)
+    assert first == second
+    low, high = first
+    assert low <= spearman(xs, ys) <= high <= 1.0
+
+
+def test_cluster_bootstrap_rejects_mismatched_lengths() -> None:
+    with pytest.raises(ValueError):
+        cluster_bootstrap_interval([0.1], [0.2, 0.3], ["a"], spearman)
