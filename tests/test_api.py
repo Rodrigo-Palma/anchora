@@ -1,17 +1,22 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
+from anchora import agent as agent_module
 from anchora.api.main import create_app
 from anchora.config import settings
+
+# Open dev mode (no API key) serves loopback peers only.
+_LOOPBACK = ("127.0.0.1", 50000)
 
 
 @pytest.fixture
 def client() -> TestClient:
-    return TestClient(create_app())
+    return TestClient(create_app(), client=_LOOPBACK)
 
 
 def test_health(client: TestClient) -> None:
@@ -113,9 +118,74 @@ def test_ask_stream_refuses_injection(client: TestClient) -> None:
 def test_api_key_gate() -> None:
     settings.api_key = "secret"
     try:
-        client = TestClient(create_app())
+        client = TestClient(create_app(), client=_LOOPBACK)
         assert client.post("/ingest", json={"provider": "hash"}).status_code == 401
         ok = client.post("/ingest", json={"provider": "hash"}, headers={"x-api-key": "secret"})
         assert ok.status_code == 200
     finally:
         settings.api_key = ""
+
+
+def test_open_mode_refuses_non_loopback_clients() -> None:
+    remote = TestClient(create_app(), client=("203.0.113.7", 50000))
+    assert remote.post("/ingest", json={"provider": "hash"}).status_code == 503
+    assert remote.post("/ask", json={"question": "x", "use_llm": False}).status_code == 503
+    assert remote.get("/health").status_code == 200
+
+
+def test_api_key_serves_remote_clients(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "api_key", "secret")
+    remote = TestClient(create_app(), client=("203.0.113.7", 50000))
+    assert remote.post("/ingest", json={"provider": "hash"}).status_code == 401
+    wrong = remote.post("/ingest", json={"provider": "hash"}, headers={"x-api-key": "secreT"})
+    assert wrong.status_code == 401
+    ok = remote.post("/ingest", json={"provider": "hash"}, headers={"x-api-key": "secret"})
+    assert ok.status_code == 200
+
+
+@pytest.mark.parametrize("directory", ["/", "/etc", "..", "../../src", "/tmp"])
+def test_ingest_refuses_directories_outside_the_corpus_root(
+    client: TestClient, directory: str
+) -> None:
+    resp = client.post("/ingest", json={"provider": "hash", "directory": directory})
+    assert resp.status_code == 400
+    assert "corpus root" in resp.json()["detail"]
+
+
+def test_ingest_accepts_a_subdirectory_of_the_root(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    (sub / "doc.md").write_text("title: D\n\nSome legal text here.", encoding="utf-8")
+    monkeypatch.setattr(settings, "corpus_root", str(tmp_path))
+    for directory in ("sub", str(sub)):
+        resp = client.post("/ingest", json={"provider": "hash", "directory": directory})
+        assert resp.status_code == 200
+        assert resp.json()["documents_indexed"] == 1
+
+
+def test_ingest_enforces_file_limits(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    for name in ("a.md", "b.md"):
+        (tmp_path / name).write_text("Some legal text here.", encoding="utf-8")
+    monkeypatch.setattr(settings, "corpus_root", str(tmp_path))
+    monkeypatch.setattr(settings, "ingest_max_files", 1)
+    assert client.post("/ingest", json={"provider": "hash"}).status_code == 413
+    monkeypatch.setattr(settings, "ingest_max_files", 10)
+    monkeypatch.setattr(settings, "ingest_max_file_bytes", 5)
+    assert client.post("/ingest", json={"provider": "hash"}).status_code == 413
+
+
+def test_ask_redacts_pii_in_the_model_answer(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(agent_module, "llm_answer", lambda q, c: "Write to a.b@example.com [1].")
+    client.post("/ingest", json={"provider": "hash"})
+    body = client.post(
+        "/ask", json={"question": "What are the bidding modalities?", "provider": "hash"}
+    ).json()
+    assert "a.b@example.com" not in body["answer"]
+    assert "[REDACTED_EMAIL]" in body["answer"]
+    assert body["output_pii_redacted"] is True

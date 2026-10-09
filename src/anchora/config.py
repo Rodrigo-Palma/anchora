@@ -23,8 +23,16 @@ class Settings(BaseSettings):
     embed_dim: int = 256
     request_timeout: float = 60.0
 
-    # Optional API-key gate for the serving endpoints. Empty = open (dev default).
+    # API-key gate for the serving endpoints. Empty = open dev mode, which only
+    # accepts requests from a loopback client; any other client gets 503 until a
+    # key is set (fail closed when the server is reachable from the network).
     api_key: str = ""
+
+    # The only directory tree POST /ingest may read. Empty = the bundled
+    # data/corpus. A ``directory`` in the request must resolve inside it.
+    corpus_root: str = ""
+    ingest_max_files: int = 500
+    ingest_max_file_bytes: int = 1_000_000
 
     # Retrieval defaults. Mode is one of "dense" | "bm25" | "hybrid"; hybrid
     # fuses dense cosine and BM25 rankings with Reciprocal Rank Fusion (RRF).

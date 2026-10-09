@@ -161,15 +161,32 @@ curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
 Streaming (Server-Sent Events): with the model on, `token` events carry text as
 Ollama decodes it; the grounding check runs on the complete answer, and an
 ungrounded one is followed by a `retracted` event with the abstention that
-replaces it ([ADR 8](docs/adr/0008-streaming-with-output-validation.md)). A
-terminal `done` event carries sources, grounding and the trace:
+replaces it ([ADR 8](docs/adr/0008-streaming-with-output-validation.md)). Model
+text that contains PII (CPF, e-mail, phone) is retracted the same way and
+replaced by its redacted form. A terminal `done` event carries sources,
+grounding, the trace, and `truncated: true` if the model stream broke after the
+first token:
 
 ```bash
 curl -N -s -X POST localhost:8000/ask/stream -H 'content-type: application/json' \
   -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
 ```
 
-Set `ANCHORA_API_KEY` (or `api_key` in `.env`) to require the `x-api-key` header.
+Access control fails closed. With no `ANCHORA_API_KEY` the API is in dev mode
+and serves only loopback peers (`127.0.0.1`, `::1`); any other client, such as
+one reaching the Docker container through a published port, gets `503` until a
+key is set. With a key, every endpoint except `/health` requires a matching
+`x-api-key` header (compared in constant time). `/ingest` reads only inside
+`ANCHORA_CORPUS_ROOT` (default: the bundled `data/corpus`): a `directory`
+outside it returns `400`, symlinks that leave it are skipped, and more than
+`ANCHORA_INGEST_MAX_FILES` files or a file over `ANCHORA_INGEST_MAX_FILE_BYTES`
+returns `413`. A reverse proxy on the same host must forward `X-Forwarded-For`,
+or every request it relays looks local.
+
+```bash
+docker build -t anchora . && docker run -p 8000:8000 -e ANCHORA_API_KEY=change-me anchora
+```
+
 Every response echoes an `x-request-id` header (minted if the caller omits it).
 
 ---

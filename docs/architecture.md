@@ -74,6 +74,13 @@ The API-key guard uses `dependencies=[Depends(require_api_key)]` on the route
 decorator, not as a function parameter (that would turn it into a query param
 and cause a 422).
 
+With no key configured the guard does not open the API to everyone: it serves
+loopback peers only and answers `503` to anyone else, so a container published
+on `0.0.0.0` without `ANCHORA_API_KEY` exposes nothing but `/health`. `/ingest`
+resolves its `directory` against `ANCHORA_CORPUS_ROOT` and rejects anything
+outside it; the request used to accept any server path, which let a caller index
+every `.md`/`.txt` the process could read and read them back through `/ask`.
+
 ## MLOps (v0.3 / v0.4)
 
 ```

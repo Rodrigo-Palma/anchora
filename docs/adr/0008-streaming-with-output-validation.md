@@ -38,7 +38,15 @@ requested, so a refused or out-of-domain question never reaches the model and
 never streams model text. If Ollama is unreachable before the first token, the
 endpoint falls back to the extractive answer, which goes through the same final
 check. If the stream breaks midway, the partial text is validated like a
-complete one.
+complete one and the `done` event carries `truncated: true`, so a client can
+tell a cut answer from a finished one (the first version did not flag it).
+
+The PII redactor that cleans the question also runs on the answer. On the
+non-streaming path the answer is redacted before it is returned. On the
+streaming path the model's tokens have already been shown, so text that turns
+out to contain PII gets a `retracted` event with reason `pii in output` and the
+redacted answer; the extractive fallback is redacted before it is streamed.
+`done` reports `output_pii_redacted`.
 
 ## Consequences
 
@@ -48,7 +56,12 @@ complete one.
   the client contract has to say so. Tests (`tests/test_streaming.py`, with a
   mock Ollama transport) check that tokens reach the caller before decoding
   ends, that an answer with no citation or a forged `[99]` ends in `retracted`,
-  and that a refused question never calls the model.
+  that a refused question never calls the model, that a stream cut after the
+  first token ends with `truncated: true`, and that an e-mail in model text is
+  retracted and redacted.
+- The PII check is the same regex as on input (CPF, e-mail, BR phone). A name
+  or an address is not detected, and the raw tokens were on screen until the
+  retraction.
 - The guardrail is still the deterministic citation check. It does not detect
   a claim that cites a real chunk but misstates it; that is what the judge
   calibration in `docs/eval-calibration.md` measures, offline.
