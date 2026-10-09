@@ -1,12 +1,17 @@
 .DEFAULT_GOAL := help
-.PHONY: help install lint fmt fmt-check type test eval eval-honest calibration ablation adversarial adversarial-external bench check api dataset pipeline clean
+.PHONY: help install audit lint fmt fmt-check type test eval eval-honest calibration ablation adversarial adversarial-external bench check api dataset pipeline clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
 		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-12s\033[0m %s\n", $$1, $$2}'
 
 install: ## Sync the dev environment
-	uv sync --extra dev
+	uv sync --locked --extra dev
+
+audit: ## Audit locked runtime + dev dependencies for known vulnerabilities
+	uv export --frozen --extra dev --no-emit-project --format requirements-txt -o .audit-requirements.txt
+	uvx pip-audit==2.10.1 -r .audit-requirements.txt --disable-pip --require-hashes; \
+		status=$$?; rm -f .audit-requirements.txt; exit $$status
 
 lint: ## Ruff lint
 	uv run ruff check .
