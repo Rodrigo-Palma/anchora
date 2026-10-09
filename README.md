@@ -44,7 +44,8 @@ of answering.** Components:
   cannot say instead ([below](#fine-tuning-the-train-set-leak-and-the-held-out-eval));
 - **MLOps**: process → train → evaluate → register, with a promotion gate that
   rejects a candidate whose held-out metrics drop, plus SageMaker and Terraform
-  scaffolding;
+  scaffolding. The promoted adapter belongs to the fine-tuning study; serving
+  uses `qwen3:32b` without it;
 - **tooling**: `uv`, `ruff`, `mypy --strict`, `pytest` with coverage,
   Docker, GitHub Actions.
 
@@ -355,6 +356,11 @@ and `/ask` response carries a `trace_id` and per-stage `timing_ms`, and the API
 echoes an `x-request-id` on every response for correlation.
 
 ### Fine-tuning: the train-set leak and the held-out eval
+
+This is a separate experiment, not the serving path: the CLI and API generate
+with `qwen3:32b` and no adapter, and the registry's `prod` adapter is not loaded
+anywhere at inference ([model card](docs/model-card.md)). The study asks what a
+1.5B model learns from 24 questions and how to measure it without a leak.
 
 LoRA fine-tuning is wired with `scripts/finetune_lora.py` and
 `scripts/evaluate_finetune.py`, run on Apple Silicon MPS against

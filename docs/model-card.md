@@ -5,6 +5,13 @@ A small model card for the fine-tuned adapter that the promotion gate keeps in
 (`make eval-honest`); the full experimental arc is in
 [`finetuning-results.md`](finetuning-results.md).
 
+**This adapter is not what the API serves.** The CLI and API generate with
+`qwen3:32b` through Ollama (`ANCHORA_GEN_MODEL`), with no adapter. The
+fine-tune is a separate study of what a 1.5B model learns from 24 questions, and
+`prod` here is a stage in the file-backed registry, not a deployment. Serving
+it would need a GGUF export loaded by Ollama with `ADAPTER`, and a comparison
+against `qwen3:32b` on the same holdout, which has not been run.
+
 ## Overview
 
 | Field | Value |
