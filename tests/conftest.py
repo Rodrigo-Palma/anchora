@@ -23,3 +23,15 @@ def corpus_dir() -> Path:
 @pytest.fixture(scope="session")
 def store() -> VectorStore:
     return ingest_dir(CORPUS_DIR, provider="hash")
+
+
+@pytest.fixture(autouse=True)
+def _no_local_model(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Point Ollama at a closed port so no test can pass by reaching a local model.
+
+    CI has no Ollama; without this, a test that forgets ``provider="hash"`` is
+    green on a developer machine running Ollama and red in CI.
+    """
+    from anchora.config import settings
+
+    monkeypatch.setattr(settings, "ollama_base_url", "http://127.0.0.1:9")
