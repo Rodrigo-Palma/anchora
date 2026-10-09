@@ -44,7 +44,7 @@ dev = [
 finetune = [
     "torch>=2.2",
     "transformers>=4.44",
-    "datasets>=2.20",
+    "datasets>=5.1.0",
     "peft>=0.12",
     "accelerate>=0.33",
 ]
