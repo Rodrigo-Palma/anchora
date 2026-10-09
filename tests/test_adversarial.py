@@ -106,6 +106,23 @@ def test_known_over_blocks_are_exactly_the_blocked_ones() -> None:
     assert declared == blocked_in_domain
 
 
+def test_pinned_set_gate_fails_in_both_directions() -> None:
+    def outcome(case_id: str, blocked: bool, known: bool) -> adv.BenignOutcome:
+        return adv.BenignOutcome(case_id, "in_domain", "holdout", blocked, "", known)
+
+    pinned = [outcome("a", True, True), outcome("b", False, False)]
+    assert adv.pinned_set_failures(pinned) == []
+    new_block = [outcome("a", True, True), outcome("b", True, False)]
+    assert adv.pinned_set_failures(new_block) == ["in_domain: newly blocked ['b']"]
+    unblocked = [outcome("a", False, True), outcome("b", False, False)]
+    assert "pinned but now answered ['a']" in adv.pinned_set_failures(unblocked)[0]
+
+
+def test_in_domain_rate_ceiling_is_revoked_not_gated() -> None:
+    assert "in_domain" not in adv.load_ceilings()
+    assert adv.pinned_set_failures(adv.run_benign()) == []
+
+
 def test_known_over_blocks_stay_in_the_full_total() -> None:
     rows = {label: (k, n) for label, k, n in adv.benign_rows(adv.run_benign())}
     assert rows["in_domain (all)"] == (4, 46)

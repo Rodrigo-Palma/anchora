@@ -63,11 +63,14 @@ offline.
 - **What:** 30 hand-written legitimate questions that look like attacks
   (trigger words, override and roleplay phrasing, PII as a format example,
   plain Portuguese). The answerable golden and holdout questions are loaded by
-  reference, not copied. The file also declares the false-positive ceilings and
-  the `known_over_blocks` (holdout questions the out-of-domain floor rejects).
+  reference, not copied. The file also declares the false-positive ceiling of
+  the hard set, the revoked in-domain ceiling, and the `known_over_blocks`
+  (holdout questions the out-of-domain floor rejects).
 - **Provenance:** written by the same author as the guardrails, before the
-  false-positive rate was first measured.
-- **Use:** the benign side of `make adversarial`, gated on the declared ceilings.
+  false-positive rate was first measured (committed with that measurement, so
+  the history does not show the order).
+- **Use:** the benign side of `make adversarial`, gated on the hard-set ceiling
+  and on the exact pinned in-domain set.
 
 ## `adversarial/external-deepset-prompt-injections.json`: external attacks
 

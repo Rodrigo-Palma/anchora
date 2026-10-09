@@ -28,8 +28,10 @@ The other half of a guardrail's cost is the legitimate question it stops. The
 benign side replays ``data/adversarial/benign.json``: the answerable golden and
 holdout questions (``in_domain``) and a hand-written ``hard`` set that looks like
 an attack on purpose. A benign question counts as over-blocked when it is
-refused or abstains. ``--check`` also fails when either set's false-positive
-rate exceeds the ceiling declared in that file.
+refused or abstains. ``--check`` also fails when the ``hard`` set's
+false-positive rate exceeds its ceiling, or when the blocked ``in_domain``
+questions differ from the pinned ``known_over_blocks`` (the in-domain rate
+ceiling was exceeded on the first measurement and revoked; ADR 6 addendum).
 
 ``--external`` replays a public prompt-injection set (the frozen test split of
 ``deepset/prompt-injections``, Apache-2.0) and reports recall and false-positive
@@ -234,6 +236,23 @@ def benign_failures(outcomes: list[BenignOutcome], ceilings: dict[str, float]) -
     return failures
 
 
+def pinned_set_failures(outcomes: list[BenignOutcome]) -> list[str]:
+    """In-domain gate: the blocked questions must be exactly ``known_over_blocks``.
+
+    This replaced the in-domain rate ceiling after it was exceeded (ADR 6
+    addendum). A new over-block fails, and so does a pinned one that starts
+    being answered, so the file is updated on purpose rather than drifting.
+    """
+    blocked = {o.case_id for o in outcomes if o.benign_set == "in_domain" and o.blocked}
+    pinned = {o.case_id for o in outcomes if o.known_over_block}
+    failures: list[str] = []
+    if new := sorted(blocked - pinned):
+        failures.append(f"in_domain: newly blocked {new}")
+    if fixed := sorted(pinned - blocked):
+        failures.append(f"in_domain: pinned but now answered {fixed} (update known_over_blocks)")
+    return failures
+
+
 def summary_rows(outcomes: list[AttackOutcome]) -> list[tuple[str, int, int]]:
     """``(label, handled, n)`` per category (gated only), then both totals."""
     by_category: dict[str, list[AttackOutcome]] = defaultdict(list)
@@ -327,7 +346,7 @@ def print_benign_report(outcomes: list[BenignOutcome]) -> None:
     if over:
         print("\nOver-blocked benign questions:")
         for o in over:
-            known = " (known, not gated)" if o.known_over_block else ""
+            known = " (pinned)" if o.known_over_block else ""
             print(f"  - {o.case_id} [{o.benign_set} / {o.category}]: {o.detail}{known}")
 
 
@@ -351,14 +370,17 @@ def main(argv: list[str] | None = None) -> int:
     if not args.check:
         return 0
     failures = [o for o in outcomes if not o.known_gap and not o.passed]
-    over_ceiling = benign_failures(benign, load_ceilings())
+    over_ceiling = benign_failures(benign, load_ceilings()) + pinned_set_failures(benign)
     if failures:
         print(f"\nADVERSARIAL GATE FAILED: {len(failures)} attack(s) not handled.")
     for line in over_ceiling:
         print(f"\nFALSE-POSITIVE GATE FAILED: {line}")
     if failures or over_ceiling:
         return 1
-    print("\nADVERSARIAL GATE PASSED (attacks handled, benign false-positive rate under ceiling)")
+    print(
+        "\nADVERSARIAL GATE PASSED (attacks handled, hard look-alikes under ceiling,"
+        " in-domain over-blocks equal to the pinned set)"
+    )
     return 0
 
 

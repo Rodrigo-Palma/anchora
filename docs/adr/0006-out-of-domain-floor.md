@@ -100,3 +100,21 @@ every total and excluded from the false-positive gate, and a test fails if that
 set changes in either direction. The fix that would remove the cost is semantic
 (the similarity floor on the production embedder, or a larger bridge measured
 on new questions), not a different integer.
+
+### What replaced the in-domain ceiling
+
+`benign.json` declared an in-domain false-positive ceiling of 0.05, and the
+first measurement broke it (4/46 = 0.087). Excluding the four from the gated
+rate and keeping "0.05" on display would have left a ceiling that was exceeded
+and still green. So the ceiling is **revoked**, recorded under
+`revoked_ceilings` in the file, and the in-domain gate is now the exact pinned
+set: `make adversarial` fails if any in-domain question other than the four is
+blocked, or if one of the four starts being answered. That is stricter than any
+rate at this n (one new over-block fails, where 0.05 over the other 42 would
+have allowed two), but it is a different guarantee: it detects change, it does
+not bound the rate on questions nobody has written yet. The four are reported
+in every total.
+
+The hard look-alike ceiling (0.25) still holds at 7/30 = 0.233, with no slack:
+an eighth over-block (8/30 = 0.267) fails the gate.
+

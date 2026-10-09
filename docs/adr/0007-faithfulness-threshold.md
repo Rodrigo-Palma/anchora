@@ -12,8 +12,9 @@ held-out generations over 22 questions, scored by the proxy, by `qwen3:32b`
 (twice) and by `gemma4:31b`, all frozen in `data/eval/judge-scores.json`.
 
 The rule for moving the floor was written after the first judge (`qwen3:32b`)
-had been scored and before the second judge and the repeat run were: change it
-only if
+had been scored and before the second judge and the repeat run were. It was
+committed together with the scores, so the repository history cannot show that
+order; it rests on the author's account. The rule: change the floor only if
 
 1. the judge is reliable enough to calibrate against: verdict kappa between two
    different judge models of at least 0.60;
@@ -60,6 +61,12 @@ range, and the docs say so.
 - The gate keeps its role as a regression floor on extractive answers. It is not
   a faithfulness estimate for model output; for that, the proxy reaches a
   Spearman of about 0.49 with either judge, against 0.78 between the judges.
+- A floor on the frozen model generations was considered and not added: those
+  generations never change, and `make eval-honest` already fails if any score
+  derived from them moves, so a 0.70 floor over them would add no protection.
+  A gate on model output means generating in CI, which ADR 2 rules out for now.
+- Future rules and ceilings get their own commit before the measurement they
+  govern, so the order is checkable by hash and timestamp.
 - To revisit: a larger set of systems or human labels for the item-level
   verdict, and a gate on model output instead of extractive answers. Rerunning
   the judges is `scripts/calibrate_judge.py --run <label> --model <model>`; the
