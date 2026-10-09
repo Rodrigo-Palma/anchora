@@ -438,7 +438,8 @@ Full arc (every failed run, the leak, the fix, the ratio sweep, the gate) in
 | **v0.2** | *evals* in CI + guardrails ✅ |
 | **v0.3** | LoRA *fine-tune* + baseline vs. tuned comparison on a 28-question held-out set; **5-abstention adapter promoted** via the gate, 10-abstention variant rejected on a citation drop (18/22 → 14/22) that is within noise at this n ✅ |
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
-| **v0.5** ← current | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
+| **v0.5** | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
+| **v0.6** ← current | proxy calibrated against two LLM judges · guardrail false-positive rate and an external attack set · production-embedder ablation · real-token SSE with retraction · `py.typed` ✅ |
 
 **Next: v1.0 (demo + close the documented gaps)**
 

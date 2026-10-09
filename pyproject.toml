@@ -1,6 +1,6 @@
 [project]
 name = "anchora"
-version = "0.5.0"
+version = "0.6.0"
 description = "Domain RAG agent for Brazilian legal/administrative text: cited answers, tool use, evals in CI, LoRA fine-tuning — fully local-first."
 readme = "README.md"
 requires-python = ">=3.12"

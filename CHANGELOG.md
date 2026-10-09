@@ -5,23 +5,58 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
-## [Unreleased]
+## [0.6.0] - 2026-10-09
+
+Measure what was previously assumed: the faithfulness proxy against LLM judges,
+the guardrails' cost on legitimate questions and their recall on external
+attacks, and retrieval with the production embedder. Several results are
+negative and are reported as such.
 
 ### Added
-- **Out-of-domain floor** (`domain.py`, [ADR 6](docs/adr/0006-out-of-domain-floor.md)):
-  the abstain check now requires at least `ood_min_overlap` distinct corpus
-  tokens (default 2) instead of a single collision, plus an optional dense-cosine
-  floor (`ood_similarity_threshold`, default off) for the production embedder.
-  `VectorStore.corpus_vocabulary()` backs the overlap count.
+- **Judge calibration, measured** (`scripts/calibrate_judge.py`,
+  `data/eval/judge-scores.json`, `make calibration`): 100 answerable held-out
+  generations scored by `qwen3:32b` (twice) and `gemma4:31b` at temperature 0,
+  frozen with model digests and the prompt hash; CI recomputes every published
+  statistic offline. See `docs/eval-calibration.md` and
+  [ADR 7](docs/adr/0007-faithfulness-threshold.md).
+- **Agreement statistics** in `anchora.stats`: Spearman, Cohen's kappa, a
+  question-clustered bootstrap and the smallest detectable correlation.
+- **False-positive rate of the guardrails** (`data/adversarial/benign.json`):
+  46 in-domain and 30 attack-looking legitimate questions, gated on ceilings
+  declared before the first run.
+- **External attacks, not gated** (`make adversarial-external`): the
+  `deepset/prompt-injections` test split (Apache-2.0), frozen with revision and
+  file hash.
+- **Production-embedder ablation** (`--provider ollama --freeze`, `--compare`):
+  retrieval with `nomic-embed-text`, frozen with the model digest and compared
+  with `hash` by paired McNemar.
+- **Real-token SSE**: `/ask/stream` forwards Ollama tokens as they decode and
+  emits `retracted` when the complete answer fails the grounding check
+  ([ADR 8](docs/adr/0008-streaming-with-output-validation.md)).
+- `py.typed`, so the package's annotations reach consumers (PEP 561).
+- `docs/methodology.md`: the evaluation write-up (replaces the draft post).
+- Wilson intervals, paired McNemar and bootstrap intervals in every eval report
+  (holdout, ablation, adversarial), and the out-of-domain floor of
+  [ADR 6](docs/adr/0006-out-of-domain-floor.md).
+
+### Changed
+- `Agent.run` is split into `prepare` and `finalize`, so a streaming caller
+  stops before the model on refusals and out-of-domain questions.
+- The test suite points Ollama at a closed port, so no test can pass by
+  reaching a local model.
 
 ### Fixed
-- Closed the `ood-008` known gap (a single incidental token defeated the old
-  zero-overlap floor). The adversarial suite now reports `off_domain` 12/12 and
-  two documented gaps (`inj-012`, `jb-008`), down from three.
+- `ood-008` (one incidental token defeated the old zero-overlap floor) is
+  handled; the adversarial suite has two documented gaps (`inj-012`, `jb-008`).
 
-### To do (v1.0)
-- Recorded demo (asciinema/GIF) of the CLI + API flow.
-- Public write-up of the eval methodology.
+### Found by the new measurements
+- The input guardrail refuses 1/60 external injections; the pipeline declined
+  58/60 only because the out-of-domain floor rejected them.
+- The out-of-domain floor abstains on 4/22 answerable holdout questions; they
+  are pinned as known over-blocks and the trade-off is in the ADR 6 addendum.
+- The lexical proxy scores the base model's English answers about 0.2 while the
+  judge scores them about 0.5 to 0.6: part of what the proxy calls unfaithful is
+  language mismatch.
 
 ## [0.5.0] — 2026-07-01
 
