@@ -212,6 +212,28 @@ because it does not lose recall to BM25 on this set and keeps dense's tolerance
 to paraphrase, which a 22-question holdout cannot measure. A larger holdout
 would be needed to separate the three.
 
+The table above uses the offline `hash` embedder, which CI reproduces. The
+production path embeds with `nomic-embed-text` through Ollama; that run was
+measured locally and frozen with the model digest in
+`data/eval/ablation-ollama.json` (`--provider ollama --freeze`). BM25 does not
+use the embedder, so its rows are identical and omitted:
+
+| Dataset | Mode | Recall@4, nomic (k/n, Wilson 95%) | Precision@4 | MRR@4 | Only hash hit / only nomic hit | McNemar p |
+|---|---|---|---|---|---|---|
+| golden (train, n=24) | dense | 20/24 = 0.833 [0.64, 0.93] | 0.312 [0.24, 0.39] | 0.812 [0.65, 0.96] | 4 / 0 | 0.125 |
+| golden (train, n=24) | hybrid | 24/24 = 1.000 [0.86, 1.00] | 0.427 [0.38, 0.47] | 0.958 [0.90, 1.00] | 0 / 0 | 1.000 |
+| holdout (unseen, n=22) | dense | 21/22 = 0.955 [0.78, 0.99] | 0.341 [0.28, 0.40] | 0.879 [0.76, 0.98] | 1 / 3 | 0.625 |
+| holdout (unseen, n=22) | hybrid | 22/22 = 1.000 [0.85, 1.00] | 0.420 [0.38, 0.47] | 0.977 [0.93, 1.00] | 0 / 2 | 0.500 |
+
+The direction is the one expected from how the `hash` bridge was built: on the
+golden set it was fit to, `hash` dense beats nomic dense by 4 questions; on the
+holdout, nomic finds 3 that `hash` misses and misses 1 that `hash` finds, and
+nomic hybrid is the only configuration that retrieves all 22. None of these
+differences is significant (smallest p = 0.125), so the honest reading is that
+the production embedder is not worse on unseen questions, not that it is
+better. `uv run python scripts/ablation_retrieval.py --compare` recomputes the
+paired column offline from the frozen file.
+
 ### Adversarial guardrail suite
 
 `data/adversarial/attacks.json` holds 46 hand-written attacks (prompt injection,
