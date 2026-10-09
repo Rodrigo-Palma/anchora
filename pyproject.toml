@@ -43,7 +43,7 @@ dev = [
 # Kept out of the core install so the test suite and serving stay light.
 finetune = [
     "torch>=2.2",
-    "transformers>=4.44",
+    "transformers>=5.18.0",
     "datasets>=2.20",
     "peft>=0.12",
     "accelerate>=0.33",
