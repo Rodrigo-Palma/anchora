@@ -2,9 +2,9 @@
 
 Endpoints:
 
-* ``GET  /health``  — liveness + store status;
-* ``POST /ingest``  — (re)build the in-memory store from the configured corpus;
-* ``POST /ask``     — answer a question with the tool-using agent.
+* ``GET  /health``: liveness + store status;
+* ``POST /ingest``: (re)build the in-memory store from the configured corpus;
+* ``POST /ask``: answer a question with the tool-using agent.
 
 Cross-cutting concerns handled here:
 

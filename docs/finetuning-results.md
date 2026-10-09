@@ -287,7 +287,7 @@ surface, because it only asks the questions the glossary was fit to.
 ### Run the held-out comparison
 
 ```bash
-# three fair rows — base zero-shot, base few-shot, LoRA — on UNSEEN questions
+# three fair rows (base zero-shot, base few-shot, LoRA) on UNSEEN questions
 uv run python scripts/evaluate_finetune.py \
   --base Qwen/Qwen2.5-1.5B-Instruct \
   --adapter artifacts/lora-anchora-qwen15b-earlystop-fixed-lr1e4-e30 \

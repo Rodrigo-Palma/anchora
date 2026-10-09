@@ -1,11 +1,11 @@
-# Datasheet — anchora datasets
+# Datasheet: anchora datasets
 
 Following the spirit of *Datasheets for Datasets* (Gebru et al.), this documents
 what lives under `data/`, how it was built, and how it is used. Everything here
 is small, hand-authored, and versioned so the whole pipeline is reproducible
 offline.
 
-## `corpus/` — the knowledge base
+## `corpus/`: the knowledge base
 
 - **What:** excerpts of Brazilian public-law statutes (LAI, Lei 8.112, LC 80 /
   Defensoria Pública, LGPD, CPC deadlines, Lei 14.133 procurement, Lei 9.784
@@ -16,16 +16,16 @@ offline.
   the golden/holdout questions probe. Not the full statutes.
 - **Use:** ingested (chunked + embedded) into the vector store for retrieval.
 
-## `golden/golden.json` — training / dev set (24 questions)
+## `golden/golden.json`: training / dev set (24 questions)
 
 - **What:** 24 questions with `expected_doc` and a `reference_answer`, covering
   the 8 corpus documents.
 - **Use:** the CI eval gate (retrieval recall + faithfulness floor) and the
   fine-tune training signal. Few-shot exemplars are drawn **only** from here.
-- **Language:** questions in English, corpus in Portuguese — an intentional
+- **Language:** questions in English, corpus in Portuguese, an intentional
   cross-lingual setup exercised by the EN→PT glossary bridge.
 
-## `golden/holdout.json` — held-out test set (28 questions)
+## `golden/holdout.json`: held-out test set (28 questions)
 
 - **What:** 28 brand-new questions (22 answerable, 6 out-of-corpus) the adapter
   never trained on. Abstention cases carry the exact refusal sentence and
@@ -35,7 +35,7 @@ offline.
 - **Use:** the held-out fine-tune metrics (citation-correct, PT-aware abstention,
   faithfulness) and the judge-calibration sample.
 
-## `eval/holdout-generations.json` — frozen model outputs
+## `eval/holdout-generations.json`: frozen model outputs
 
 - **What:** the real decoded generations for each arm (base+few-shot, LoRA-0/5/10)
   on the holdout, frozen so they can be **re-scored deterministically without a
@@ -44,18 +44,18 @@ offline.
   outputs makes the reported numbers reproducible in CI. A drift from the values
   in `finetuning-results.md` fails the build.
 
-## `finetune/` — instruction dataset
+## `finetune/`: instruction dataset
 
 - **What:** the built instruction/completion pairs for LoRA fine-tuning
   (`scripts/build_finetune_dataset.py`), including the 5 abstention examples.
 - **Use:** training input for `scripts/finetune_lora.py` (completion-only loss).
 
-## `adversarial/attacks.json` — guardrail attack suite
+## `adversarial/attacks.json`: guardrail attack suite
 
 - **What:** 46 attacks across injection, jailbreak, PII exfiltration, citation
   forgery and off-domain, each with an `expected` contract and a `known_gap`
   flag for documented limitations.
-- **Use:** `scripts/adversarial_suite.py` / `make adversarial` — a CI gate on the
+- **Use:** `scripts/adversarial_suite.py` / `make adversarial`, a CI gate on the
   guardrail block rate. See the file's own `description` field for the contract.
 
 ## `adversarial/benign.json`: legitimate questions (false-positive rate)

@@ -58,9 +58,9 @@ negative and are reported as such.
   judge scores them about 0.5 to 0.6: part of what the proxy calls unfaithful is
   language mismatch.
 
-## [0.5.0] — 2026-07-01
+## [0.5.0] - 2026-07-01
 
-Retrieval quality, adversarial robustness, observability and documentation —
+Retrieval quality, adversarial robustness, observability and documentation:
 each claim measured, each limitation documented rather than hidden.
 
 ### Added
@@ -68,7 +68,7 @@ each claim measured, each limitation documented rather than hidden.
   dense cosine via Reciprocal Rank Fusion; `retrieval_mode` (`dense|bm25|hybrid`,
   default `hybrid`) in config. Backed by `scripts/ablation_retrieval.py`
   (`make ablation`) measuring recall/precision/MRR per mode.
-- **Adversarial guardrail suite**: `data/adversarial/attacks.json` (44 attacks —
+- **Adversarial guardrail suite**: `data/adversarial/attacks.json` (44 attacks:
   injection, jailbreak, PII exfiltration, citation forgery, off-domain) replayed
   by `scripts/adversarial_suite.py` (`make adversarial`); gates CI.
 - **Observability**: per-stage tracing (`observability.py`) on every
@@ -99,7 +99,7 @@ each claim measured, each limitation documented rather than hidden.
   gate (10-abstention variant auto-rejected); the LLM-judge pointer now
   references the calibration script instead of the registry tool.
 
-## [0.4.0] — 2026-06-24
+## [0.4.0] - 2026-06-24
 
 ### Added
 - **File-backed model registry** (`registry.py`): `ModelCard` + `ModelRegistry`
@@ -115,7 +115,7 @@ each claim measured, each limitation documented rather than hidden.
   promotes to `prod` only if there is no regression on the target metric.
 - CI: `terraform` job (`fmt -check`, `init -backend=false`, `validate`).
 
-## [0.3.0] — 2026-06-24
+## [0.3.0] - 2026-06-24
 
 ### Added
 - **LoRA/QLoRA fine-tuning** behind the optional `finetune` extra (PEFT/transformers/
@@ -124,7 +124,7 @@ each claim measured, each limitation documented rather than hidden.
   set + corpus using the deterministic offline retriever.
 - `scripts/finetune_lora.py`: training entrypoint (`Qwen/Qwen2.5-3B-Instruct`).
 
-## [0.2.0] — 2026-06-24
+## [0.2.0] - 2026-06-24
 
 ### Added
 - **Deterministic guardrails** (`guardrails.py`): injection/jailbreak blocking
@@ -140,7 +140,7 @@ each claim measured, each limitation documented rather than hidden.
 - API-key guard moved to `dependencies=[Depends(...)]` on the decorator, fixing
   the 422s on `/ingest` and `/ask`.
 
-## [0.1.0] — 2026-06-24
+## [0.1.0] - 2026-06-24
 
 ### Added
 - RAG pipeline: `chunking`, `embeddings` (Ollama `nomic-embed-text` + `hash`
