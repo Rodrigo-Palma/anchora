@@ -100,7 +100,7 @@ generation, with real tokens over SSE and the end-of-stream grounding check of
 **observed example**, not guaranteed behaviour: the model is not deterministic,
 and a rerun can answer, cite or retract differently.
 
-Recording: [`demo-local.cast`](demo-local.cast) (asciinema, 4 KB of text;
+Recording: [`demo-local.cast`](demo-local.cast) (asciinema, 2220 bytes of text;
 `asciinema play docs/demo-local.cast`). Frozen SSE transcript of the same run:
 [`data/demo/stream-transcript.json`](../data/demo/stream-transcript.json),
 checked offline by `tests/test_demo_transcript.py` (order `token`+,
