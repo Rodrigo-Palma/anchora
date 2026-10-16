@@ -55,6 +55,9 @@ jobs:
       - name: Judge calibration (frozen judge scores re-checked, no model)
         run: uv run make calibration
 
+      - name: Out-of-domain floor (frozen nomic similarities re-checked, no model)
+        run: uv run make ood-floor
+
       - name: Adversarial guardrail suite (block rate + false-positive gate, offline)
         run: uv run make adversarial
 

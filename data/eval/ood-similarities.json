@@ -1,0 +1,470 @@
+{
+  "_comment": "Distinct lexical overlap and top nomic-embed-text cosine per labelled question. Regenerate with scripts/calibrate_ood_floor.py --run; --check rebuilds the ADR 6 tables offline.",
+  "measured_at": "2026-10-16",
+  "model": {
+    "name": "nomic-embed-text:latest",
+    "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f",
+    "ollama_version": "0.35.1",
+    "details": {
+      "parent_model": "",
+      "format": "gguf",
+      "family": "nomic-bert",
+      "families": [
+        "nomic-bert"
+      ],
+      "parameter_size": "137M",
+      "quantization_level": "F16"
+    }
+  },
+  "chunks": 15,
+  "records": [
+    {
+      "case_id": "lai-prazo",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 6,
+      "top_cosine": 0.547632
+    },
+    {
+      "case_id": "lai-recurso",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 7,
+      "top_cosine": 0.561391
+    },
+    {
+      "case_id": "lai-classificacao",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.544432
+    },
+    {
+      "case_id": "8112-posse",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 7,
+      "top_cosine": 0.526688
+    },
+    {
+      "case_id": "8112-estagio",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 5,
+      "top_cosine": 0.524588
+    },
+    {
+      "case_id": "8112-penalidades",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 5,
+      "top_cosine": 0.527003
+    },
+    {
+      "case_id": "defensoria-principios",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.576652
+    },
+    {
+      "case_id": "defensoria-publico",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.553769
+    },
+    {
+      "case_id": "defensoria-ingresso",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.503527
+    },
+    {
+      "case_id": "lgpd-sensivel",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.542363
+    },
+    {
+      "case_id": "lgpd-agentes",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.506496
+    },
+    {
+      "case_id": "lgpd-direitos",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.598322
+    },
+    {
+      "case_id": "cpc-uteis",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.51328
+    },
+    {
+      "case_id": "cpc-contestacao",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.589759
+    },
+    {
+      "case_id": "cpc-prazo-dobro",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.496003
+    },
+    {
+      "case_id": "licitacao-modalidades",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.545478
+    },
+    {
+      "case_id": "licitacao-extintas",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.590015
+    },
+    {
+      "case_id": "licitacao-pncp",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 5,
+      "top_cosine": 0.603729
+    },
+    {
+      "case_id": "proc-adm-recurso",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 5,
+      "top_cosine": 0.586783
+    },
+    {
+      "case_id": "proc-adm-decisao",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.570003
+    },
+    {
+      "case_id": "proc-adm-decadencia",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.544898
+    },
+    {
+      "case_id": "gratuidade-abrange",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.463734
+    },
+    {
+      "case_id": "gratuidade-pedido",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 5,
+      "top_cosine": 0.555154
+    },
+    {
+      "case_id": "gratuidade-suspensiva",
+      "subset": "golden",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.524137
+    },
+    {
+      "case_id": "ho-lai-regra",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.578767
+    },
+    {
+      "case_id": "ho-lai-privacidade",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.523741
+    },
+    {
+      "case_id": "ho-8112-exercicio",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.523183
+    },
+    {
+      "case_id": "ho-8112-suspensao",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.525958
+    },
+    {
+      "case_id": "ho-8112-ferias",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.495516
+    },
+    {
+      "case_id": "ho-defensoria-garantias",
+      "subset": "holdout_answerable",
+      "pinned": true,
+      "distinct_overlap": 1,
+      "top_cosine": 0.525287
+    },
+    {
+      "case_id": "ho-defensoria-natureza",
+      "subset": "holdout_answerable",
+      "pinned": true,
+      "distinct_overlap": 1,
+      "top_cosine": 0.576636
+    },
+    {
+      "case_id": "ho-lgpd-objetivo",
+      "subset": "holdout_answerable",
+      "pinned": true,
+      "distinct_overlap": 1,
+      "top_cosine": 0.502561
+    },
+    {
+      "case_id": "ho-lgpd-encarregado",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.591786
+    },
+    {
+      "case_id": "ho-lgpd-bases",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 5,
+      "top_cosine": 0.658024
+    },
+    {
+      "case_id": "ho-cpc-apelacao",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.573032
+    },
+    {
+      "case_id": "ho-cpc-embargos",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.618864
+    },
+    {
+      "case_id": "ho-cpc-recesso",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.539712
+    },
+    {
+      "case_id": "ho-licitacao-substituiu",
+      "subset": "holdout_answerable",
+      "pinned": true,
+      "distinct_overlap": 0,
+      "top_cosine": 0.569949
+    },
+    {
+      "case_id": "ho-licitacao-habilitacao",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.592997
+    },
+    {
+      "case_id": "ho-licitacao-direta",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 2,
+      "top_cosine": 0.523078
+    },
+    {
+      "case_id": "ho-procadm-destino-recurso",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.56954
+    },
+    {
+      "case_id": "ho-procadm-lei",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.673977
+    },
+    {
+      "case_id": "ho-gratuidade-recurso",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 3,
+      "top_cosine": 0.521564
+    },
+    {
+      "case_id": "ho-gratuidade-pessoa-juridica",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 5,
+      "top_cosine": 0.657768
+    },
+    {
+      "case_id": "ho-lai-custo",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.607764
+    },
+    {
+      "case_id": "ho-8112-jornada",
+      "subset": "holdout_answerable",
+      "pinned": false,
+      "distinct_overlap": 4,
+      "top_cosine": 0.495084
+    },
+    {
+      "case_id": "ho-ooc-homicidio",
+      "subset": "holdout_out_of_corpus",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.636102
+    },
+    {
+      "case_id": "ho-ooc-salario-minimo",
+      "subset": "holdout_out_of_corpus",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.51557
+    },
+    {
+      "case_id": "ho-ooc-senadores",
+      "subset": "holdout_out_of_corpus",
+      "pinned": false,
+      "distinct_overlap": 1,
+      "top_cosine": 0.512123
+    },
+    {
+      "case_id": "ho-ooc-imposto-renda",
+      "subset": "holdout_out_of_corpus",
+      "pinned": false,
+      "distinct_overlap": 1,
+      "top_cosine": 0.548712
+    },
+    {
+      "case_id": "ho-ooc-cnh",
+      "subset": "holdout_out_of_corpus",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.539521
+    },
+    {
+      "case_id": "ho-ooc-marca",
+      "subset": "holdout_out_of_corpus",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.545263
+    },
+    {
+      "case_id": "ood-001",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.458996
+    },
+    {
+      "case_id": "ood-002",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.446828
+    },
+    {
+      "case_id": "ood-003",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.362702
+    },
+    {
+      "case_id": "ood-004",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.39419
+    },
+    {
+      "case_id": "ood-005",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.328092
+    },
+    {
+      "case_id": "ood-006",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.381564
+    },
+    {
+      "case_id": "ood-007",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.405303
+    },
+    {
+      "case_id": "ood-008",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 1,
+      "top_cosine": 0.548376
+    },
+    {
+      "case_id": "ood-009",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.55306
+    },
+    {
+      "case_id": "ood-010",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.372488
+    },
+    {
+      "case_id": "ood-011",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.415163
+    },
+    {
+      "case_id": "ood-012",
+      "subset": "ood",
+      "pinned": false,
+      "distinct_overlap": 0,
+      "top_cosine": 0.585446
+    }
+  ]
+}

@@ -154,3 +154,65 @@ overlap 0 and is out of reach of this rule by construction.
 
 If none of the four has overlap ≥ 1, no rule of this shape can recover them,
 and the item closes with that negative result instead.
+
+
+## Addendum (2026-10-15): measured on `nomic-embed-text`
+
+`scripts/calibrate_ood_floor.py --run` recorded the distinct overlap and the
+top cosine to the corpus (15 chunks) of all 64 labelled questions on
+`nomic-embed-text` (digest `0a109f422b47`, Ollama 0.35.1) in
+`data/eval/ood-similarities.json`. `make ood-floor` (part of `make check`)
+rebuilds every table below from that file, recomputes the overlap from the
+corpus, and fails if this ADR stops matching. Each cell counts the questions
+that abstain.
+
+The lexical floor, rebuilt from the frozen file, reproduces the 2026-10-09
+table:
+
+| Overlap floor (cosine off) | golden in-domain (n=24) | holdout answerable (n=22) | holdout out-of-corpus (n=6) | `ood-*` attacks (n=12) |
+|---|---|---|---|---|
+| 1 | 0 | 1 | 4 | 11 |
+| 2 | 0 | 4 | 6 | 12 |
+| 3 | 3 | 9 | 6 | 12 |
+
+The dense floor as wired (overlap ≥ 2 first, then the cosine) on the
+production embedder:
+
+| Cosine floor (overlap ≥ 2) | golden in-domain (n=24) | holdout answerable (n=22) | holdout out-of-corpus (n=6) | `ood-*` attacks (n=12) |
+|---|---|---|---|---|
+| 0.00 | 0 | 4 | 6 | 12 |
+| 0.40 | 0 | 4 | 6 | 12 |
+| 0.45 | 0 | 4 | 6 | 12 |
+| 0.50 | 2 | 6 | 6 | 12 |
+| 0.55 | 14 | 12 | 6 | 12 |
+| 0.60 | 23 | 17 | 6 | 12 |
+| 0.65 | 24 | 19 | 6 | 12 |
+| 0.70 | 24 | 22 | 6 | 12 |
+| 0.75 | 24 | 22 | 6 | 12 |
+| 0.80 | 24 | 22 | 6 | 12 |
+
+| Top nomic cosine | golden in-domain (n=24) | holdout answerable (n=22) | holdout out-of-corpus (n=6) | `ood-*` attacks (n=12) |
+|---|---|---|---|---|
+| range | 0.464 to 0.604 | 0.495 to 0.674 | 0.512 to 0.636 | 0.328 to 0.585 |
+
+Two things follow. First, at the current overlap floor of 2 the dense floor
+adds nothing on these sets: the 6 out-of-corpus holdout questions and the 12
+attacks already abstain, so every threshold from 0.50 up only removes answers
+from real questions (2 golden and 2 more holdout at 0.50, 14 golden at 0.55).
+Second, the nomic cosine on its own does not separate: the out-of-corpus
+holdout questions (0.512 to 0.636) sit inside the in-domain range, and the
+highest attack (0.585) is above the weakest golden question (0.464). The
+default stays at 0.0.
+
+The four pinned holdout questions:
+
+| Pinned holdout question | distinct overlap | top nomic cosine |
+|---|---|---|
+| `ho-defensoria-garantias` | 1 | 0.525 |
+| `ho-defensoria-natureza` | 1 | 0.577 |
+| `ho-lgpd-objetivo` | 1 | 0.503 |
+| `ho-licitacao-substituiu` | 0 | 0.570 |
+
+Three of the four share one distinct corpus token, so the overlap-1 rule
+registered in the previous addendum can be evaluated on them;
+`ho-licitacao-substituiu` (overlap 0) cannot be recovered by it.

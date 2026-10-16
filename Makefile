@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install audit lint fmt fmt-check type test eval eval-honest calibration ablation adversarial adversarial-external bench docker-smoke check api dataset pipeline clean
+.PHONY: help install audit lint fmt fmt-check type test eval eval-honest calibration ood-floor ablation adversarial adversarial-external bench docker-smoke check api dataset pipeline clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -38,6 +38,9 @@ eval-honest: ## Re-score frozen held-out generations + replay the promotion gate
 calibration: ## Recompute proxy-vs-judge agreement from frozen judge scores (no model)
 	uv run python scripts/calibrate_judge.py --check
 
+ood-floor: ## Rebuild the out-of-domain floor tables from frozen nomic similarities (no model)
+	uv run python scripts/calibrate_ood_floor.py --check
+
 ablation: ## Measure retrieval modes (dense vs bm25 vs hybrid) on golden + holdout
 	uv run python scripts/ablation_retrieval.py
 
@@ -54,7 +57,7 @@ docker-smoke: ## Build the image and smoke-test it (/health, auth gate, /ask, HE
 	docker build -t anchora:ci .
 	bash scripts/docker_smoke.sh anchora:ci
 
-check: lint fmt-check type test eval eval-honest calibration adversarial ## Run the full local CI gate
+check: lint fmt-check type test eval eval-honest calibration ood-floor adversarial ## Run the full local CI gate
 
 dataset: ## Build the fine-tune instruction dataset
 	uv run python scripts/build_finetune_dataset.py
