@@ -1,8 +1,10 @@
 services:
   ollama:
-    image: ollama/ollama:latest
-    ports:
-      - "11434:11434"
+    # Pinned by version and digest (multi-arch index). Bump both together.
+    image: ollama/ollama:0.40.5@sha256:5d3a2f25f9825628daba94dc0b1d421c7d57d6c03ae5faa9ba050e058bab8241
+    # No published port: Ollama's API has no authentication, and the api
+    # service reaches it on the compose network (http://ollama:11434). For
+    # host access in development, add `ports: ["127.0.0.1:11434:11434"]`.
     volumes:
       - ollama:/root/.ollama
     healthcheck:
@@ -14,7 +16,9 @@ services:
   api:
     build: .
     ports:
-      - "8000:8000"
+      # Loopback only. To serve other hosts, put it behind a proxy that caps
+      # the body size and set ANCHORA_API_KEY.
+      - "127.0.0.1:8000:8000"
     environment:
       # Point the app at the Ollama service; override for hash/offline mode.
       ANCHORA_OLLAMA_BASE_URL: http://ollama:11434

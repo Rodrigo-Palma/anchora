@@ -18,6 +18,13 @@ no tag or GitHub release; their entries describe the history up to the
   one entry per excerpt.
 
 ### Changed
+- `docker-compose.yml` no longer publishes Ollama's port. It was bound to
+  `0.0.0.0:11434`, and Ollama's API has no authentication: anyone on the
+  network could generate, pull or delete models around every anchora
+  guardrail. The api reaches it on the compose network as before. The api
+  port is now bound to `127.0.0.1:8000`, and the Ollama image is pinned to
+  `0.40.5` by digest instead of `:latest`. `tests/test_compose.py` checks all
+  three.
 - README and demo examples of the offline path now ask a question the
   extractive fallback actually answers. The previous one ("What are the bidding
   modalities?") was cited but not answered (answer relevance 0.00 in
