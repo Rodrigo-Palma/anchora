@@ -38,8 +38,10 @@ from typing import Any
 import httpx
 
 from anchora.config import settings
+from anchora.domain import admits_overlap_one
 from anchora.embeddings import embed_texts, tokenize
 from anchora.ingest import ingest_dir
+from anchora.stats import format_proportion
 from anchora.store import VectorStore
 
 _ROOT = Path(__file__).resolve().parents[1]
@@ -63,6 +65,13 @@ OVERLAP_FLOORS = (1, 2, 3)
 # Fixed grid, chosen before the cosines were measured; 0.0 is the shipped default.
 COSINE_THRESHOLDS = (0.0, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80)
 _HTTP_TIMEOUT_S = 30.0
+# Overlap-1 dense rule, fixed in ADR 6 before the cosines were measured:
+# t1 = highest must-abstain overlap-1 cosine + T1_OFFSET, rounded up to 2 decimals;
+# accepted only if the lowest recovered cosine clears that maximum by REQUIRED_MARGIN.
+MUST_ABSTAIN = ("holdout_out_of_corpus", "ood")
+T1_OFFSET = 0.01
+REQUIRED_MARGIN = 0.02
+_RULE_OVERLAP = 1
 
 SimilarityFn = Callable[[str], float]
 
@@ -137,6 +146,116 @@ def cosine_rows(records: Sequence[dict[str, Any]]) -> list[tuple[float, tuple[in
     return [(t, _abstain_counts(records, CURRENT_MIN_OVERLAP, t)) for t in COSINE_THRESHOLDS]
 
 
+def _must_abstain_overlap1(records: Sequence[dict[str, Any]]) -> list[float]:
+    return [
+        r["top_cosine"]
+        for r in records
+        if r["subset"] in MUST_ABSTAIN and r["distinct_overlap"] == _RULE_OVERLAP
+    ]
+
+
+def preregistered_t1(records: Sequence[dict[str, Any]]) -> float:
+    """t1 as fixed in ADR 6: highest must-abstain overlap-1 cosine + 0.01, rounded up."""
+    cosines = _must_abstain_overlap1(records)
+    highest = max(cosines) if cosines else 0.0
+    # round() first so a float like 55.99999999 does not ceil to 56 by accident of
+    # representation, nor 56.0000001 to 57.
+    return math.ceil(round((highest + T1_OFFSET) * 100, 6)) / 100
+
+
+def _rule_abstains(r: dict[str, Any], t1: float) -> bool:
+    overlap = r["distinct_overlap"]
+    if overlap >= CURRENT_MIN_OVERLAP:
+        return False
+    return not admits_overlap_one(overlap, CURRENT_MIN_OVERLAP, r["top_cosine"], t1)
+
+
+def rule_rows(records: Sequence[dict[str, Any]]) -> list[tuple[str, tuple[int, ...]]]:
+    """Abstentions per subset: the shipped floor vs the overlap-1 rule at t1."""
+    t1 = preregistered_t1(records)
+    wired = _abstain_counts(records, CURRENT_MIN_OVERLAP, 0.0)
+    rule = tuple(
+        sum(1 for r in records if r["subset"] == s and _rule_abstains(r, t1)) for s in SUBSETS
+    )
+    return [(f"as wired (overlap ≥ {CURRENT_MIN_OVERLAP})", wired), ("overlap-1 rule", rule)]
+
+
+@dataclass(frozen=True)
+class RuleResult:
+    t1: float
+    highest_must_abstain: float
+    recovered: tuple[str, ...]
+    margin: float
+    answered_wired: int
+    answered_rule: int
+    n_answerable: int
+    failures: list[str]
+
+
+def evaluate_rule(records: Sequence[dict[str, Any]]) -> RuleResult:
+    """Apply the pre-registered rule and its acceptance criterion (ADR 6)."""
+    t1 = preregistered_t1(records)
+    highest = max(_must_abstain_overlap1(records), default=0.0)
+    (_, wired), (_, rule) = rule_rows(records)
+    recovered = [
+        r
+        for r in records
+        if r["pinned"] and r["distinct_overlap"] < CURRENT_MIN_OVERLAP and not _rule_abstains(r, t1)
+    ]
+    margin = min((r["top_cosine"] for r in recovered), default=highest) - highest
+    sizes = {s: sum(1 for r in records if r["subset"] == s) for s in SUBSETS}
+    failures = [
+        f"{label}: {got} of {sizes[subset]} abstain, expected {want}"
+        for label, subset, got, want in (
+            ("golden", "golden", rule[0], 0),
+            ("holdout out-of-corpus", "holdout_out_of_corpus", rule[2], sizes[MUST_ABSTAIN[0]]),
+            ("ood-*", "ood", rule[3], sizes[MUST_ABSTAIN[1]]),
+        )
+        if got != want
+    ]
+    if not any(r["case_id"] == "ood-008" and _rule_abstains(r, t1) for r in records):
+        failures.append("ood-008 is answered")
+    if not recovered:
+        failures.append("no pinned holdout question recovered")
+    elif round(margin, 6) < REQUIRED_MARGIN:
+        failures.append(f"margin {margin:.3f} < {REQUIRED_MARGIN:.2f}")
+    n = sizes["holdout_answerable"]
+    return RuleResult(
+        t1=t1,
+        highest_must_abstain=highest,
+        recovered=tuple(r["case_id"] for r in recovered),
+        margin=margin,
+        answered_wired=n - wired[1],
+        answered_rule=n - rule[1],
+        n_answerable=n,
+        failures=failures,
+    )
+
+
+def render_rule(records: Sequence[dict[str, Any]]) -> list[str]:
+    """The overlap-1 rule tables ADR 6 publishes, rebuilt from the frozen records."""
+    counts = _table("Rule (nomic-embed-text)", rule_rows(records))
+    result = evaluate_rule(records)
+    by_id = {r["case_id"]: r for r in records}
+    recovered = ", ".join(f"`{c}` ({by_id[c]['top_cosine']:.3f})" for c in result.recovered)
+    n = result.n_answerable
+    lines = [
+        "| Overlap-1 rule on `nomic-embed-text` | measured |",
+        "|---|---|",
+        f"| highest must-abstain overlap-1 cosine | {result.highest_must_abstain:.3f} |",
+        f"| t1 (that + {T1_OFFSET:.2f}, rounded up) | {result.t1:.2f} |",
+        f"| pinned questions recovered | {recovered or 'none'} |",
+        f"| margin (required ≥ {REQUIRED_MARGIN:.2f}) | {result.margin:.3f} |",
+        f"| holdout answerable answered, as wired | "
+        f"{format_proportion(result.answered_wired, n)} |",
+        f"| holdout answerable answered, with the rule | "
+        f"{format_proportion(result.answered_rule, n)} |",
+        f"| recovered | {format_proportion(result.answered_rule - result.answered_wired, n)} |",
+        f"| criterion | {'met' if not result.failures else 'not met'} |",
+    ]
+    return [counts, "\n".join(lines)]
+
+
 def _table(first: str, rows: Sequence[tuple[str, Sequence[int | str]]]) -> str:
     lines = [
         f"| {first} | " + " | ".join(_HEADERS) + " |",
@@ -170,7 +289,7 @@ def render_tables(records: Sequence[dict[str, Any]]) -> list[str]:
         for r in records
         if r["pinned"]
     )
-    return [overlap, cosine, ranges, "\n".join(pinned_lines)]
+    return [overlap, cosine, ranges, "\n".join(pinned_lines), *render_rule(records)]
 
 
 def model_identity(model: str, client: httpx.Client | None = None) -> dict[str, Any]:
@@ -244,6 +363,13 @@ def check(frozen_path: Path = FROZEN_PATH, adr_path: Path = ADR_PATH) -> list[st
             failures.append(f"overlap drift: {r['case_id']}")
         if not math.isfinite(r["top_cosine"]):
             failures.append(f"non-finite cosine: {r['case_id']}")
+    failures.extend(f"overlap-1 rule: {f}" for f in evaluate_rule(records).failures)
+    t1 = preregistered_t1(records)
+    if settings.ood_overlap1_similarity_threshold != t1:
+        failures.append(
+            f"shipped overlap-1 threshold {settings.ood_overlap1_similarity_threshold} "
+            f"!= pre-registered t1 {t1}"
+        )
     adr = adr_path.read_text(encoding="utf-8")
     failures.extend(
         f"table not published in {adr_path.name}:\n{table}"

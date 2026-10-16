@@ -133,3 +133,65 @@ def test_model_identity_refuses_a_missing_model() -> None:
     client = httpx.Client(transport=httpx.MockTransport(handler), base_url="http://x")
     with pytest.raises(RuntimeError, match="not pulled"):
         cof.model_identity("nomic-embed-text", client=client)
+
+
+# --- Overlap-1 dense rule (pre-registered in ADR 6 before measuring) ---------
+
+
+def test_t1_follows_the_preregistered_formula() -> None:
+    """Highest must-abstain overlap-1 cosine (0.548712) + 0.01, rounded up."""
+    assert cof.preregistered_t1(_frozen()["records"]) == 0.56
+
+
+def test_shipped_threshold_is_the_preregistered_t1() -> None:
+    from anchora.config import Settings
+
+    assert Settings().ood_overlap1_similarity_threshold == cof.preregistered_t1(
+        _frozen()["records"]
+    )
+
+
+def test_rule_rows_only_move_holdout_answerable() -> None:
+    rows = cof.rule_rows(_frozen()["records"])
+    assert rows == [("as wired (overlap ≥ 2)", (0, 4, 6, 12)), ("overlap-1 rule", (0, 3, 6, 12))]
+
+
+def test_rule_meets_the_preregistered_criterion() -> None:
+    result = cof.evaluate_rule(_frozen()["records"])
+    assert result.failures == []
+    assert result.recovered == ("ho-defensoria-natureza",)
+    assert result.margin >= cof.REQUIRED_MARGIN
+
+
+def _with_cosine(case_id: str, value: float) -> list[dict[str, Any]]:
+    records = _frozen()["records"]
+    return [{**r, "top_cosine": value} if r["case_id"] == case_id else r for r in records]
+
+
+def test_criterion_rejects_a_margin_below_two_hundredths() -> None:
+    # Must-abstain max 0.56 -> t1 0.57; natureza (0.577) recovered by 0.017 only.
+    result = cof.evaluate_rule(_with_cosine("ho-ooc-imposto-renda", 0.56))
+    assert result.recovered == ("ho-defensoria-natureza",)
+    assert any("margin" in f for f in result.failures)
+
+
+def test_criterion_rejects_when_nothing_is_recovered() -> None:
+    result = cof.evaluate_rule(_with_cosine("ood-008", 0.58))
+    assert result.recovered == ()
+    assert any("recovered" in f for f in result.failures)
+
+
+def test_criterion_rejects_a_golden_abstention() -> None:
+    records = [
+        {**r, "distinct_overlap": 1, "top_cosine": 0.1} if r["case_id"] == "lai-prazo" else r
+        for r in _frozen()["records"]
+    ]
+    result = cof.evaluate_rule(records)
+    assert any("golden" in f for f in result.failures)
+
+
+def test_check_fails_when_the_shipped_threshold_drifts(monkeypatch: pytest.MonkeyPatch) -> None:
+    from anchora.config import settings
+
+    monkeypatch.setattr(settings, "ood_overlap1_similarity_threshold", 0.5)
+    assert any("threshold" in f for f in cof.check())

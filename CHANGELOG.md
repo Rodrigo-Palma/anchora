@@ -7,6 +7,17 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
 
 ## [Unreleased]
 
+### Changed
+- Out-of-domain floor on the Ollama embedder: a question sharing exactly one
+  distinct corpus token is now in-domain if its top `nomic-embed-text` cosine
+  is >= `ANCHORA_OOD_OVERLAP1_SIMILARITY_THRESHOLD` (default 0.56, 0.0 turns it
+  off). The rule and its acceptance criterion were registered in ADR 6 before
+  the cosines were measured; on the frozen similarities it recovers 1 holdout
+  question (18/22 -> 19/22 answered) while 0/6 out-of-corpus questions are
+  answered and 12/12 attacks still abstain. The `hash` path (CI, adversarial
+  suite) is unchanged; `make ood-floor` is the gate for this path. If Ollama is
+  unreachable, the question abstains.
+
 ### Security
 - `make audit` and the CI audit step now cover the `finetune` extra too
   (runtime + dev + finetune, from `uv.lock`, without installing it). Before,

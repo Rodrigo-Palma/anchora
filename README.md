@@ -506,13 +506,15 @@ roadmap closes known gaps instead of chasing new surface:
 - [x] **Judge-calibrated threshold**: measured against two judges; the floor
   stays at 0.70 because no stable alternative emerged
   ([ADR 7](docs/adr/0007-faithfulness-threshold.md)).
-- [ ] **Out-of-domain floor on the production embedder**: measured on
-  `nomic-embed-text` (`make ood-floor`). As wired the dense floor cannot
-  recover the 4 holdout questions the lexical floor rejects: it runs after the
-  lexical check and can only add abstentions, and on these sets it adds them
-  only to real questions. A pre-registered overlap-1 rule is the next step; it
-  can reach at most 3 of the 4 (`ho-licitacao-substituiu` has overlap 0)
-  ([ADR 6 addendum](docs/adr/0006-out-of-domain-floor.md#addendum-2026-10-15-measured-on-nomic-embed-text)).
+- [x] **Out-of-domain floor on the production embedder**: measured on
+  `nomic-embed-text` (`make ood-floor`). The dense floor as wired only adds
+  abstentions, and on these sets only to real questions, so it stays off. A
+  pre-registered overlap-1 rule (Ollama only) recovers 1 of the 4 holdout
+  questions the lexical floor rejects: holdout answerable answered goes from
+  18/22 to 19/22 (Wilson 95% [0.67, 0.95]), with 0/6 out-of-corpus answered and
+  12/12 attacks still abstaining. One question, not a rate change; the holdout
+  set the threshold, and CI (`hash`) does not exercise the rule
+  ([ADR 6 addendum](docs/adr/0006-out-of-domain-floor.md#addendum-2026-10-15-the-overlap-1-rule-applied-as-registered)).
 
 **Deliberately out of scope** (stated so the boundaries are a choice, not an omission)
 

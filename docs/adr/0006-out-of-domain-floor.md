@@ -216,3 +216,58 @@ The four pinned holdout questions:
 Three of the four share one distinct corpus token, so the overlap-1 rule
 registered in the previous addendum can be evaluated on them;
 `ho-licitacao-substituiu` (overlap 0) cannot be recovered by it.
+
+
+## Addendum (2026-10-15): the overlap-1 rule, applied as registered
+
+The rule fixed before measuring is now wired in `assess_domain`, on the
+`ollama` provider only (`ood_overlap1_similarity_threshold`, default 0.56; 0.0
+turns it off). On the `hash` provider nothing changes, so `make eval`, the
+adversarial suite and its `known_over_blocks` are untouched. If Ollama is
+unreachable when the rule needs the cosine, the question abstains, as before.
+`make ood-floor` applies the formula and the criterion to the frozen
+similarities, fails if the shipped threshold differs from the formula's t1, and
+rebuilds the tables below:
+
+| Rule (nomic-embed-text) | golden in-domain (n=24) | holdout answerable (n=22) | holdout out-of-corpus (n=6) | `ood-*` attacks (n=12) |
+|---|---|---|---|---|
+| as wired (overlap ≥ 2) | 0 | 4 | 6 | 12 |
+| overlap-1 rule | 0 | 3 | 6 | 12 |
+
+| Overlap-1 rule on `nomic-embed-text` | measured |
+|---|---|
+| highest must-abstain overlap-1 cosine | 0.549 |
+| t1 (that + 0.01, rounded up) | 0.56 |
+| pinned questions recovered | `ho-defensoria-natureza` (0.577) |
+| margin (required ≥ 0.02) | 0.028 |
+| holdout answerable answered, as wired | 18/22 = 0.818 [0.61, 0.93] |
+| holdout answerable answered, with the rule | 19/22 = 0.864 [0.67, 0.95] |
+| recovered | 1/22 = 0.045 [0.01, 0.22] |
+| criterion | met |
+
+All four criteria hold, so the rule is accepted. The live path agrees with the
+frozen file: `assess_domain(..., provider="ollama")` over the 64 questions, on
+the same model digest, abstained 0, 3, 6 and 12 times per set.
+
+What this does and does not show:
+
+- **Small gain.** One of the four pinned questions comes back
+  (`ho-defensoria-natureza`); `ho-defensoria-garantias` (0.525) and
+  `ho-lgpd-objetivo` (0.503) stay below t1, and `ho-licitacao-substituiu` has
+  overlap 0. The intervals for 18/22 and 19/22 overlap almost entirely: on 22
+  questions this is one question, not a measured improvement in the rate.
+- **Criteria 1 to 3 hold by construction.** t1 sits above every must-abstain
+  overlap-1 cosine by definition, so only criterion 4 (a recovery with a 0.02
+  margin) could have failed. The margin is 0.028, from three must-abstain
+  probes with overlap 1 (two out-of-corpus holdout questions and `ood-008`).
+  With n=6 out-of-corpus questions, no threshold is statistically
+  distinguishable from its neighbours.
+- **The holdout is spent for this decision.** t1 was derived from the holdout
+  out-of-corpus cosines and the gain is read off the holdout answerable set, so
+  neither is a hold-out for the overlap-1 rule any more. A new out-of-domain
+  set is needed to measure how the rule generalizes.
+- **CI does not see the rule.** CI runs on `hash`, where the rule is off. On
+  the dense path the boundary is looser than before by one token, and the only
+  gate is `make ood-floor` on the frozen file. A new model digest changes
+  every cosine: re-run `scripts/calibrate_ood_floor.py --run`, and the
+  formula, not a hand edit, sets the new threshold.
