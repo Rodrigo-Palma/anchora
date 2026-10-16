@@ -1,6 +1,6 @@
 # Version-update PRs are off (limit 0): upgrades are applied by hand and
-# validated by the full local gate. Dependabot security updates still open PRs
-# for advisories, and CI runs pip-audit on the locked set on every push.
+# validated by the full local gate. Dependabot alerts flag advisories (no
+# security-update PRs), and CI runs pip-audit on the locked set on every push.
 version: 2
 updates:
   - package-ecosystem: uv
