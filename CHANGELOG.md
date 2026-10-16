@@ -14,6 +14,11 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   one entry per excerpt.
 
 ### Changed
+- README and demo examples of the offline path now ask a question the
+  extractive fallback actually answers. The previous one ("What are the bidding
+  modalities?") was cited but not answered (answer relevance 0.00 in
+  `anchora eval`); the README now states that the fallback always cites but
+  does not promise to answer.
 - `sources` is unchanged and kept for compatibility, now documented as the
   distinct titles in alphabetical order: it does not follow the `[n]`
   numbering (an answer citing `[1]` could be read against the wrong law).

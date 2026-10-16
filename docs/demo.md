@@ -24,8 +24,12 @@ Expected: clean lint/format/types, the full test suite passing, and the eval
 ## 2. RAG + citation
 
 ```bash
-uv run anchora ask "What are the types of public procurement?" --provider hash --no-llm
+uv run anchora ask "Which law replaced Lei nº 8.666/1993 for public bidding and contracts?" --provider hash --no-llm
 ```
+
+The offline fallback quotes the first two sentences of the top excerpt, so it
+always cites but does not promise to answer; this question is one where those
+sentences do answer (Lei 14.133 replaced Lei 8.666/1993).
 
 Expected: an extractive answer **with `[n]` citation**, a `Citations:` block
 that resolves each `[n]` (`[1] Nova Lei de Licitações ...`) and the distinct
@@ -82,7 +86,7 @@ In another terminal:
 ```bash
 curl -s localhost:8000/health
 curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
-  -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}' | jq
+  -d '{"question":"Which law replaced Lei nº 8.666/1993 for public bidding and contracts?","use_llm":false,"provider":"hash"}' | jq
 ```
 
 ## 8. ML pipeline (dry-run, executes nothing)

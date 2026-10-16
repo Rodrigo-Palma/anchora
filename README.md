@@ -150,8 +150,11 @@ uv sync --extra dev
 ### CLI (offline, no model, `hash` provider)
 
 ```bash
-# Ask (deterministic extractive fallback, no LLM)
-uv run anchora ask "What are the bidding modalities?" --provider hash --no-llm
+# Ask (deterministic extractive fallback, no LLM). The fallback quotes the first
+# two sentences of the top excerpt: it always cites, but it does not promise to
+# answer. Here those sentences hold the answer; for "What are the bidding
+# modalities?" they do not (answer relevance 0.00 on that golden case).
+uv run anchora ask "Which law replaced Lei nº 8.666/1993 for public bidding and contracts?" --provider hash --no-llm
 
 # Deadline calculation (the agent detects a date + N days and calls the tool)
 uv run anchora ask "Deadline of 15 business days from 2026-06-24?" --provider hash --no-llm
@@ -181,7 +184,7 @@ curl -s localhost:8000/health
 curl -s -X POST localhost:8000/ingest -H 'content-type: application/json' \
   -d '{"provider":"hash"}'
 curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
-  -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
+  -d '{"question":"Which law replaced Lei nº 8.666/1993 for public bidding and contracts?","use_llm":false,"provider":"hash"}'
 ```
 
 Resolving `[n]`: `/ask`, the stream's `done` event and the CLI return
@@ -202,7 +205,7 @@ after the first token:
 
 ```bash
 curl -N -s -X POST localhost:8000/ask/stream -H 'content-type: application/json' \
-  -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
+  -d '{"question":"Which law replaced Lei nº 8.666/1993 for public bidding and contracts?","use_llm":false,"provider":"hash"}'
 ```
 
 Access control fails closed. With no `ANCHORA_API_KEY` the API is in dev mode
