@@ -27,9 +27,12 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
 - README roadmap: a v0.8 row (the 0.8.0 release) now carries the "← current"
   marker, which had stayed on v0.7. A test fails if the marker and the package
   version disagree.
-- `sources` is unchanged and kept for compatibility, now documented as the
-  distinct titles in alphabetical order: it does not follow the `[n]`
-  numbering (an answer citing `[1]` could be read against the wrong law).
+- `sources` is kept for compatibility and documented as the distinct titles,
+  sorted case-insensitively: it does not follow the `[n]` numbering (an answer
+  citing `[1]` could be read against the wrong law). It was sorted by code
+  point, so `Lei Geral ...` came before `Lei de Acesso ...`; the key is now
+  `str.casefold` with the raw title as tie-break. The frozen demo transcript
+  keeps the old order.
 
 ### Fixed
 - PII in the question is now redacted by the agent itself, before the input

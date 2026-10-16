@@ -191,7 +191,7 @@ Resolving `[n]`: `/ask`, the stream's `done` event and the CLI return
 `citations`, one `{n, title, doc_id}` per retrieved excerpt in the order of the
 numbered context the model saw, so `[n]` in the answer is `citations[n-1]`. Two
 excerpts of the same law keep two entries. `sources` is kept for compatibility:
-it is the distinct titles sorted alphabetically and does **not** follow the
+it is the distinct titles sorted case-insensitively (`str.casefold`) and does **not** follow the
 `[n]` numbering, so do not resolve a citation against it.
 
 Streaming (Server-Sent Events): with the model on, `token` events carry text as

@@ -35,7 +35,7 @@ sentences do answer (Lei 14.133 replaced Lei 8.666/1993).
 
 Expected: an extractive answer **with `[n]` citation**, a `Citations:` block
 that resolves each `[n]` (`[1] Nova Lei de Licitações ...`) and the distinct
-sources retrieved from the corpus (alphabetical, not in `[n]` order).
+sources retrieved from the corpus (sorted case-insensitively, not in `[n]` order).
 
 ## 3. Tool use (deadline calculation)
 
@@ -182,7 +182,8 @@ How to read it:
   the 18.9 s generation ended, so streaming saved almost nothing there. Single observations, not a
   latency benchmark (`make bench` measures the offline pipeline).
 - In this transcript `done` lists only `sources`: the distinct source documents
-  of the retrieved chunks, sorted alphabetically, which do not follow the `[n]`
-  numbering. It was frozen before `citations` existed; a live `done` now also
+  of the retrieved chunks, which do not follow the `[n]` numbering (sorted by
+  code point, the order at freeze time; a live run sorts them case-insensitively).
+  It was frozen before `citations` existed; a live `done` now also
   carries `citations` (`{n, title, doc_id}` in prompt order), which resolves
   each `[n]`.

@@ -64,7 +64,7 @@ class Citation:
 class AgentResult:
     question: str
     answer: str
-    # Distinct source titles, sorted alphabetically. Kept for compatibility:
+    # Distinct source titles, sorted case-insensitively (see source_titles). Kept for compatibility:
     # this list does NOT follow the [n] numbering; use ``citations`` for that.
     sources: list[str]
     grounded: bool
@@ -187,7 +187,7 @@ class Agent:
         return AgentResult(
             question=prepared.question,
             answer=final,
-            sources=sorted({chunk.title or chunk.doc_id for chunk in prepared.chunks}),
+            sources=source_titles(prepared.chunks),
             citations=citations_for(prepared.chunks),
             grounded=True,  # either cited, or an explicit abstention (itself grounded)
             tool_calls=prepared.tool_calls,
@@ -231,6 +231,18 @@ class Agent:
             if generated:
                 return _append_fact(generated, deadline_fact)
         return _append_fact(_extractive_answer(chunks), deadline_fact)
+
+
+def source_titles(chunks: list[Chunk]) -> list[str]:
+    """Distinct titles (``doc_id`` when untitled), sorted case-insensitively.
+
+    The key is ``str.casefold``, with the raw string as a tie-break so titles
+    that differ only in case still come out in a fixed order. Accented initials
+    sort by code point after casefolding (``"Á"`` after ``"z"``); the corpus
+    titles start with unaccented letters.
+    """
+    titles = {chunk.title or chunk.doc_id for chunk in chunks}
+    return sorted(titles, key=lambda title: (title.casefold(), title))
 
 
 def citations_for(chunks: list[Chunk]) -> list[Citation]:

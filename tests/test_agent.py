@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
-from anchora.agent import Agent
-from anchora.store import VectorStore
+from anchora.agent import Agent, source_titles
+from anchora.store import Chunk, VectorStore
 
 
 def test_agent_answers_with_citation_offline(store: VectorStore) -> None:
@@ -106,3 +106,31 @@ def test_agent_without_pii_is_not_flagged(store: VectorStore) -> None:
     result = agent.run("What are the bidding modalities?")
     assert result.pii_redacted is False
     assert result.question == "What are the bidding modalities?"
+
+
+def _chunk(title: str, doc_id: str = "doc") -> Chunk:
+    return Chunk(doc_id=doc_id, text="x", embedding=[1.0], title=title)
+
+
+def test_sources_are_sorted_case_insensitively() -> None:
+    chunks = [
+        _chunk("Nova Lei de Licitações"),
+        _chunk("Lei Geral de Proteção de Dados"),
+        _chunk("Lei de Acesso à Informação"),
+        _chunk("Lei Geral de Proteção de Dados"),
+    ]
+    assert source_titles(chunks) == [
+        "Lei de Acesso à Informação",
+        "Lei Geral de Proteção de Dados",
+        "Nova Lei de Licitações",
+    ]
+
+
+def test_sources_order_is_deterministic_for_case_variants() -> None:
+    chunks = [_chunk("lei x"), _chunk("Lei X"), _chunk("LEI X")]
+    assert source_titles(chunks) == ["LEI X", "Lei X", "lei x"]
+    assert source_titles(list(reversed(chunks))) == ["LEI X", "Lei X", "lei x"]
+
+
+def test_sources_fall_back_to_doc_id() -> None:
+    assert source_titles([_chunk("", doc_id="b-doc"), _chunk("A title")]) == ["A title", "b-doc"]

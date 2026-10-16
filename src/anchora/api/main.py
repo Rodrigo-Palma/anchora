@@ -93,7 +93,7 @@ class AskResponse(BaseModel):
     question: str
     answer: str
     sources: list[str] = Field(
-        description="Distinct source titles, sorted alphabetically. Kept for "
+        description="Distinct source titles, sorted case-insensitively. Kept for "
         "compatibility; does not follow the [n] numbering (use citations)."
     )
     citations: list[CitationOut] = Field(
