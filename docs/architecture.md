@@ -105,3 +105,22 @@ build-dataset (golden + corpus → JSONL)
 | Generation | extractive fallback | Ollama `qwen3:32b` |
 | Network | none | localhost (Ollama) |
 | Cost | zero | zero |
+
+## Container image
+
+Multi-stage `Dockerfile`: a `uv sync --frozen --no-dev` builder and a
+`python:3.12-slim` runtime that runs as a non-root user (uid 10001) with a
+`HEALTHCHECK` on `/health`. Measured on 2026-10-15 with Docker 29.7.2:
+
+| Platform | Compressed | On disk |
+|---|---|---|
+| linux/arm64 | 56.3 MB | 262 MB |
+| linux/amd64 | 56.2 MB | not measured |
+
+The `docker-smoke` CI job builds the image and runs
+`scripts/docker_smoke.sh` against it (`make docker-smoke` locally): with the
+`hash` embedder and a test key it checks `/health`, a `401` on `/ask` without
+the key, a `200` on `/ask` with at least one source (this covers the lazy
+corpus ingestion inside the image), and that the `HEALTHCHECK` reports
+`healthy`. No Ollama is reachable in the container, so generation fails fast and
+the agent answers with its extractive fallback.

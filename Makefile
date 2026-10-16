@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := help
-.PHONY: help install audit lint fmt fmt-check type test eval eval-honest calibration ablation adversarial adversarial-external bench check api dataset pipeline clean
+.PHONY: help install audit lint fmt fmt-check type test eval eval-honest calibration ablation adversarial adversarial-external bench docker-smoke check api dataset pipeline clean
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -49,6 +49,10 @@ adversarial-external: ## Replay a public prompt-injection set (deepset, frozen) 
 
 bench: ## Benchmark offline pipeline latency (p50/p95 per stage) with a regression gate
 	uv run python scripts/benchmark.py --max-p95-ms 250
+
+docker-smoke: ## Build the image and smoke-test it (/health, auth gate, /ask, HEALTHCHECK)
+	docker build -t anchora:ci .
+	bash scripts/docker_smoke.sh anchora:ci
 
 check: lint fmt-check type test eval eval-honest calibration adversarial ## Run the full local CI gate
 

@@ -61,6 +61,23 @@ jobs:
       - name: Latency benchmark (offline p95 regression gate)
         run: uv run make bench
 
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Build image (fails on a stale uv.lock via --frozen)
+        run: docker build -t anchora:ci .
+
+      - name: Image size
+        run: docker image ls anchora:ci
+
+      - name: Smoke test (/health, 401 without key, /ask with key, HEALTHCHECK)
+        run: bash scripts/docker_smoke.sh anchora:ci
+
   terraform:
     runs-on: ubuntu-latest
     defaults:
