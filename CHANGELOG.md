@@ -18,6 +18,13 @@ no tag or GitHub release; their entries describe the history up to the
   one entry per excerpt.
 
 ### Changed
+- The SageMaker execution role in `infra/` no longer carries the
+  `AmazonSageMakerFullAccess` managed policy (every SageMaker action in the
+  account, any `*sagemaker*` bucket, broad `iam:PassRole`). An inline policy
+  grants only what the pipeline uses: processing/training jobs, the model
+  package group, `/aws/sagemaker/*` logs and metrics, pulls from the ECR repo,
+  and `iam:PassRole` on itself to SageMaker only. The artifacts bucket now
+  denies requests without TLS. `tests/test_infra.py` checks both.
 - `docker-compose.yml` no longer publishes Ollama's port. It was bound to
   `0.0.0.0:11434`, and Ollama's API has no authentication: anyone on the
   network could generate, pull or delete models around every anchora

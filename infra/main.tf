@@ -62,6 +62,39 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "artifacts" {
   }
 }
 
+# Refuse any request to the bucket that does not use TLS.
+data "aws_iam_policy_document" "artifacts_tls_only" {
+  statement {
+    sid     = "DenyInsecureTransport"
+    effect  = "Deny"
+    actions = ["s3:*"]
+    resources = [
+      aws_s3_bucket.artifacts.arn,
+      "${aws_s3_bucket.artifacts.arn}/*",
+    ]
+
+    principals {
+      type        = "*"
+      identifiers = ["*"]
+    }
+
+    condition {
+      test     = "Bool"
+      variable = "aws:SecureTransport"
+      values   = ["false"]
+    }
+  }
+}
+
+resource "aws_s3_bucket_policy" "artifacts" {
+  bucket = aws_s3_bucket.artifacts.id
+  policy = data.aws_iam_policy_document.artifacts_tls_only.json
+
+  # Apply after the public access block so the policy is never evaluated
+  # against a bucket that still allows public policies.
+  depends_on = [aws_s3_bucket_public_access_block.artifacts]
+}
+
 # --- model registry (SageMaker model package group) -------------------------
 
 resource "aws_sagemaker_model_package_group" "qa" {
@@ -89,11 +122,111 @@ resource "aws_iam_role" "sagemaker_exec" {
 
 data "aws_iam_policy_document" "sagemaker_artifacts" {
   statement {
-    actions = ["s3:GetObject", "s3:PutObject", "s3:ListBucket"]
+    actions = ["s3:GetObject", "s3:PutObject", "s3:ListBucket", "s3:GetBucketLocation"]
     resources = [
       aws_s3_bucket.artifacts.arn,
       "${aws_s3_bucket.artifacts.arn}/*",
     ]
+  }
+}
+
+# Least privilege for the pipeline (process -> train -> evaluate -> register).
+# It replaces the AmazonSageMakerFullAccess managed policy, which granted every
+# SageMaker action in the account, any "*sagemaker*" bucket and a broad
+# iam:PassRole: a training job compromised through a dependency inherited all
+# of it. If a step runs an AWS Deep Learning Container instead of the image in
+# aws_ecr_repository.api, add that repository's ARN to the ECR statement.
+locals {
+  sm_arn_prefix   = "arn:aws:sagemaker:${var.region}:${data.aws_caller_identity.current.account_id}"
+  logs_arn_prefix = "arn:aws:logs:${var.region}:${data.aws_caller_identity.current.account_id}"
+}
+
+data "aws_iam_policy_document" "sagemaker_exec" {
+  statement {
+    sid = "PipelineJobs"
+    actions = [
+      "sagemaker:CreateProcessingJob",
+      "sagemaker:DescribeProcessingJob",
+      "sagemaker:StopProcessingJob",
+      "sagemaker:CreateTrainingJob",
+      "sagemaker:DescribeTrainingJob",
+      "sagemaker:StopTrainingJob",
+      "sagemaker:AddTags",
+      "sagemaker:ListTags",
+    ]
+    resources = [
+      "${local.sm_arn_prefix}:processing-job/*",
+      "${local.sm_arn_prefix}:training-job/*",
+    ]
+  }
+
+  statement {
+    sid = "ModelRegistry"
+    actions = [
+      "sagemaker:CreateModelPackage",
+      "sagemaker:DescribeModelPackage",
+      "sagemaker:UpdateModelPackage",
+      "sagemaker:DescribeModelPackageGroup",
+      "sagemaker:ListModelPackages",
+    ]
+    resources = [
+      aws_sagemaker_model_package_group.qa.arn,
+      "${local.sm_arn_prefix}:model-package/${aws_sagemaker_model_package_group.qa.model_package_group_name}/*",
+    ]
+  }
+
+  statement {
+    sid       = "PassOnlyThisRoleToSageMaker"
+    actions   = ["iam:PassRole"]
+    resources = [aws_iam_role.sagemaker_exec.arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "iam:PassedToService"
+      values   = ["sagemaker.amazonaws.com"]
+    }
+  }
+
+  statement {
+    sid = "JobLogs"
+    actions = [
+      "logs:CreateLogGroup",
+      "logs:CreateLogStream",
+      "logs:PutLogEvents",
+      "logs:DescribeLogStreams",
+    ]
+    resources = [
+      "${local.logs_arn_prefix}:log-group:/aws/sagemaker/*",
+      "${local.logs_arn_prefix}:log-group:/aws/sagemaker/*:log-stream:*",
+    ]
+  }
+
+  statement {
+    sid       = "JobMetrics"
+    actions   = ["cloudwatch:PutMetricData"]
+    resources = ["*"] # PutMetricData has no resource ARN; scoped by namespace.
+
+    condition {
+      test     = "StringLike"
+      variable = "cloudwatch:namespace"
+      values   = ["/aws/sagemaker/*"]
+    }
+  }
+
+  statement {
+    sid       = "EcrAuth"
+    actions   = ["ecr:GetAuthorizationToken"]
+    resources = ["*"] # account-level call; it grants no image access by itself.
+  }
+
+  statement {
+    sid = "EcrPullServingImage"
+    actions = [
+      "ecr:BatchCheckLayerAvailability",
+      "ecr:BatchGetImage",
+      "ecr:GetDownloadUrlForLayer",
+    ]
+    resources = [aws_ecr_repository.api.arn]
   }
 }
 
@@ -103,7 +236,8 @@ resource "aws_iam_role_policy" "sagemaker_artifacts" {
   policy = data.aws_iam_policy_document.sagemaker_artifacts.json
 }
 
-resource "aws_iam_role_policy_attachment" "sagemaker_full" {
-  role       = aws_iam_role.sagemaker_exec.name
-  policy_arn = "arn:aws:iam::aws:policy/AmazonSageMakerFullAccess"
+resource "aws_iam_role_policy" "sagemaker_exec" {
+  name   = "${local.name_prefix}-pipeline-least-privilege"
+  role   = aws_iam_role.sagemaker_exec.id
+  policy = data.aws_iam_policy_document.sagemaker_exec.json
 }

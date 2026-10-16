@@ -10,9 +10,9 @@ development and tests stay 100% local and free.
 | Resource | Purpose |
 |---|---|
 | `aws_ecr_repository.api` | Serving image (FastAPI). Immutable tags + scan on push. |
-| `aws_s3_bucket.artifacts` | Datasets, LoRA adapters, eval reports, and the registry. Versioned, encrypted (AES256), public access blocked. |
+| `aws_s3_bucket.artifacts` | Datasets, LoRA adapters, eval reports, and the registry. Versioned, encrypted (AES256), public access blocked, non-TLS requests denied. |
 | `aws_sagemaker_model_package_group.qa` | Version group for the registered QA model. |
-| `aws_iam_role.sagemaker_exec` | SageMaker pipeline execution role + bucket access policy. |
+| `aws_iam_role.sagemaker_exec` | SageMaker pipeline execution role with an inline least-privilege policy: its own jobs, the model package group, `/aws/sagemaker/*` logs, pulls from the ECR repo, the artifacts bucket, and `iam:PassRole` on itself to SageMaker only. |
 
 ## Variables
 
