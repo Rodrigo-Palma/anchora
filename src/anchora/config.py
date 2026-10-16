@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     # not separate in-domain from off-domain.
     ood_min_overlap: int = 2
     ood_similarity_threshold: float = 0.0
+    # Overlap-1 dense rule (ADR 6): on the ``ollama`` provider only, a question
+    # with exactly one distinct overlap is in-domain if its top cosine is >= this.
+    # 0.56 is t1 from the pre-registered formula on the frozen nomic-embed-text
+    # similarities (digest 0a109f422b47); ``make ood-floor`` fails if they drift.
+    # 0.0 turns the rule off.
+    ood_overlap1_similarity_threshold: float = 0.56
 
     # Eval gate: CI fails if mean proxy faithfulness drops below this. Checked
     # against two LLM judges and kept; see docs/adr/0007-faithfulness-threshold.md.
