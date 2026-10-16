@@ -39,6 +39,14 @@ no tag or GitHub release; their entries describe the history up to the
   keeps the old order.
 
 ### Fixed
+- An unauthenticated client could exhaust the server's memory: FastAPI reads
+  and decodes the whole JSON body before the API-key check answers `401`, and
+  nothing capped its size (a 150 MB POST to `/ask` grew uvicorn by ~450 MB). A
+  pure ASGI middleware now answers `413` for any body above
+  `ANCHORA_MAX_BODY_BYTES` (default 32 KiB), from `Content-Length` alone or by
+  stopping a chunked upload at the first byte past the limit; a malformed
+  `Content-Length` gets `400`. The same 150 MB POST now gets `413` with no RSS
+  growth.
 - `provider` on `/ask`, `/ask/stream` and `/ingest` now accepts only
   `"ollama"` or `"hash"` (the CLI's choices) and answers `422` otherwise. Any
   other string fell through to Ollama. An unreachable embedding backend now

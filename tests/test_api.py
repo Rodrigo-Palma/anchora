@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Iterator
 from pathlib import Path
 
 import httpx
@@ -260,3 +261,56 @@ def test_embedding_backend_down_returns_503_not_500(
         assert resp.json() == {"detail": "embedding provider unavailable"}
     resp = client.post("/ingest", json={"provider": "ollama"})
     assert resp.status_code == 503
+
+
+_OVER_LIMIT = b'{"question": "' + b"a" * 40_000 + b'"}'
+
+
+@pytest.mark.parametrize("path", ["/ask", "/ask/stream", "/ingest"])
+def test_oversized_body_is_rejected_before_the_key_check(
+    monkeypatch: pytest.MonkeyPatch, path: str
+) -> None:
+    # The body must be refused from Content-Length alone: a 401 would mean
+    # FastAPI had already read and decoded it (the memory DoS).
+    monkeypatch.setattr(settings, "api_key", "secret")
+    remote = TestClient(create_app(), client=("203.0.113.7", 50000))
+    resp = remote.post(path, content=_OVER_LIMIT, headers={"content-type": "application/json"})
+    assert resp.status_code == 413
+
+
+def test_oversized_chunked_body_is_rejected(client: TestClient) -> None:
+    def chunks() -> Iterator[bytes]:
+        for _ in range(10):
+            yield b"a" * 8_192
+
+    resp = client.post("/ask", content=chunks(), headers={"content-type": "application/json"})
+    assert resp.status_code == 413
+
+
+def test_body_limit_is_configurable(client: TestClient, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "max_body_bytes", 64)
+    body = {"question": "qual o prazo de recurso administrativo na lei 9784", "use_llm": False}
+    assert client.post("/ask", json=body).status_code == 413
+
+
+def test_chunked_body_under_the_limit_reaches_the_app(client: TestClient) -> None:
+    client.post("/ingest", json={"provider": "hash"})
+    payload = json.dumps(
+        {
+            "question": "qual o prazo de recurso administrativo na lei 9784",
+            "use_llm": False,
+            "provider": "hash",
+        }
+    ).encode()
+
+    def chunks() -> Iterator[bytes]:
+        yield payload[:10]
+        yield payload[10:]
+
+    resp = client.post("/ask", content=chunks(), headers={"content-type": "application/json"})
+    assert resp.status_code == 200
+
+
+def test_malformed_content_length_is_rejected(client: TestClient) -> None:
+    resp = client.post("/ask", content=b"{}", headers={"content-length": "abc"})
+    assert resp.status_code == 400

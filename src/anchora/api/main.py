@@ -12,6 +12,8 @@ Cross-cutting concerns handled here:
 
 * API-key gate (``settings.api_key``). With no key the API is in dev mode and
   only serves loopback clients; anyone else gets 503 (fail closed);
+* request bodies above ``settings.max_body_bytes`` are refused with 413
+  before they are read, ahead of the key gate (``api/body_limit.py``);
 * ``/ingest`` reads only inside ``settings.corpus_root``, with file-count and
   file-size limits, so a caller cannot index arbitrary server files;
 * PII redaction on every inbound question (done by the agent, the same path
@@ -42,6 +44,7 @@ from pydantic import BaseModel, Field
 
 from anchora import llm
 from anchora.agent import Agent, AgentResult
+from anchora.api.body_limit import BodySizeLimitMiddleware
 from anchora.config import settings
 from anchora.guardrails import detect_pii, redact_pii
 from anchora.ingest import IngestLimitError, corpus_files, ingest_dir
@@ -148,6 +151,10 @@ def create_app() -> FastAPI:
         """Map an unreachable embedding backend to 503 without echoing its error."""
         _log.warning("embedding backend error on %s: %s", request.url.path, type(exc).__name__)
         return JSONResponse(status_code=503, content={"detail": "embedding provider unavailable"})
+
+    # Added last, so it is the outermost app middleware: an oversized body is
+    # refused (413) before the API-key gate or FastAPI ever reads it.
+    app.add_middleware(BodySizeLimitMiddleware)
 
     def require_api_key(
         request: Request, x_api_key: Annotated[str | None, Header()] = None

@@ -34,6 +34,11 @@ class Settings(BaseSettings):
     ingest_max_files: int = 500
     ingest_max_file_bytes: int = 1_000_000
 
+    # Largest request body any endpoint accepts, checked before the body is
+    # read (api/body_limit.py). An /ask at the 2000-char question limit, fully
+    # \u-escaped, is ~12 KB; anything near this size is not a real request.
+    max_body_bytes: int = 32_768
+
     # Retrieval defaults. Mode is one of "dense" | "bm25" | "hybrid"; hybrid
     # fuses dense cosine and BM25 rankings with Reciprocal Rank Fusion (RRF).
     # Frozen experiment replays (scripts/score_generations.py) pin their own
