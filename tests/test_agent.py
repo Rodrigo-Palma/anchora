@@ -43,6 +43,19 @@ def test_agent_deadline_calendar(store: VectorStore) -> None:
     assert "2026-07-04" in result.answer
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "Deadline of 15 days from 9999-12-31 under law 8112?",
+        "Deadline of 15 calendar days from 31/12/9999 under law 8112?",
+    ],
+)
+def test_agent_skips_a_deadline_past_the_last_date(store: VectorStore, question: str) -> None:
+    agent = Agent(store, k=4, provider="hash", use_llm=False)
+    result = agent.run(question)
+    assert "legal_deadline" not in [tc.name for tc in result.tool_calls]
+
+
 def test_agent_empty_store_abstains() -> None:
     agent = Agent(VectorStore(), k=4, provider="hash", use_llm=False)
     result = agent.run("Any question about bidding?")

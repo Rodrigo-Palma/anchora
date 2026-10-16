@@ -69,10 +69,14 @@ def legal_deadline(start_date: str, days: int, kind: str = "business") -> str:
     """Compute a deadline ``days`` after ``start_date``.
 
     ``kind="business"`` counts business days (CPC default for procedural deadlines);
-    ``kind="calendar"`` counts calendar days.
+    ``kind="calendar"`` counts calendar days. A deadline past ``date.max``
+    raises ``ValueError`` (not ``OverflowError``), like any other bad input.
     """
     start = parse_iso_date(start_date)
-    due = start + timedelta(days=days) if kind == "calendar" else add_business_days(start, days)
+    try:
+        due = start + timedelta(days=days) if kind == "calendar" else add_business_days(start, days)
+    except OverflowError as exc:
+        raise ValueError(f"deadline out of range: {start.isoformat()} + {days} days") from exc
     label = "calendar days" if kind == "calendar" else "business days"
     return f"Deadline of {days} {label} from {start.isoformat()}: due on {due.isoformat()}."
 

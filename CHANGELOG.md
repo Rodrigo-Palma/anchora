@@ -39,6 +39,11 @@ no tag or GitHub release; their entries describe the history up to the
   keeps the old order.
 
 ### Fixed
+- A question whose deadline falls past `9999-12-31` (e.g. "15 days from
+  9999-12-31") returned `500` on `/ask` and `/ask/stream`: `date + timedelta`
+  raised `OverflowError`, which the agent's `except ValueError` did not catch.
+  `legal_deadline` now raises `ValueError` for it, so the agent skips the
+  deadline fact and answers normally.
 - PII in the question is now redacted by the agent itself, before the input
   guardrail, retrieval and the model, so the CLI gets the same protection as
   the API. Before, only the API redacted: `anchora ask` sent a raw CPF to

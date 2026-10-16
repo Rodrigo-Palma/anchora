@@ -44,6 +44,14 @@ def test_legal_deadline_calendar() -> None:
     assert "calendar days" in out
 
 
+@pytest.mark.parametrize("kind", ["business", "calendar"])
+def test_legal_deadline_past_the_last_date_raises_value_error(kind: str) -> None:
+    # date + timedelta past 9999-12-31 raises OverflowError, which callers that
+    # catch ValueError (the agent) would let escape as a 500.
+    with pytest.raises(ValueError, match="out of range"):
+        legal_deadline("9999-12-31", 15, kind)
+
+
 def test_deadline_tool() -> None:
     tool = make_deadline_tool()
     assert tool.name == "legal_deadline"
