@@ -5,6 +5,15 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/)
 and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/).
 
+## [Unreleased]
+
+### Security
+- `make audit` and the CI audit step now cover the `finetune` extra too
+  (runtime + dev + finetune, from `uv.lock`, without installing it). Before,
+  only runtime + dev were audited, and the finetune set carried 16 `pip-audit`
+  findings in 8 packages that no gate saw. CI calls `make audit`, so the two
+  cannot drift.
+
 ## [0.7.0] - 2026-10-09
 
 Close the gaps a review found between what the docs promise and what the code

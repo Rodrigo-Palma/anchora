@@ -548,7 +548,8 @@ Or all at once: `make check` runs lint, format, types, tests, the eval gate,
 the frozen fine-tune replay, the frozen judge calibration and the adversarial
 suite. The latency benchmark
 runs separately (`make bench`), as in CI. `make audit` runs `pip-audit` on the
-locked runtime and dev dependencies, the same check CI runs after
+locked runtime, dev and finetune dependencies (the finetune extra is audited
+from `uv.lock` without being installed), the same target CI runs after
 `uv sync --locked`.
 
 ## License

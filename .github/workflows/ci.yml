@@ -29,11 +29,10 @@ jobs:
       - name: Sync (dev, fails if uv.lock is stale)
         run: uv sync --locked --extra dev
 
-      - name: Dependency audit (pip-audit on the locked runtime + dev set)
-        run: |
-          uv export --frozen --extra dev --no-emit-project --format requirements-txt \
-            -o "$RUNNER_TEMP/requirements.txt"
-          uvx pip-audit==2.10.1 -r "$RUNNER_TEMP/requirements.txt" --disable-pip --require-hashes
+      # Same target as local: one export of runtime + dev + finetune, so CI and
+      # `make audit` cannot drift. Audits the lock only; torch is not installed.
+      - name: Dependency audit (pip-audit on the locked runtime + dev + finetune set)
+        run: make audit
 
       - name: Lint (ruff)
         run: uv run ruff check .

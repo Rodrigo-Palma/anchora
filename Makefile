@@ -8,8 +8,8 @@ help: ## Show this help
 install: ## Sync the dev environment
 	uv sync --locked --extra dev
 
-audit: ## Audit locked runtime + dev dependencies for known vulnerabilities
-	uv export --frozen --extra dev --no-emit-project --format requirements-txt -o .audit-requirements.txt
+audit: ## Audit locked runtime + dev + finetune dependencies for known vulnerabilities
+	uv export --frozen --extra dev --extra finetune --no-emit-project --format requirements-txt -o .audit-requirements.txt
 	uvx pip-audit==2.10.1 -r .audit-requirements.txt --disable-pip --require-hashes; \
 		status=$$?; rm -f .audit-requirements.txt; exit $$status
 
