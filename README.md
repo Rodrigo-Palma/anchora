@@ -502,7 +502,8 @@ Full arc (every failed run, the leak, the fix, the ratio sweep, the gate) in
 | **v0.4** | managed ML pipeline (SageMaker scaffolding) + *model registry* + Terraform ✅ |
 | **v0.5** | hybrid retrieval (BM25 + dense, RRF) with measured ablation · adversarial guardrail suite · latency benchmark + request tracing · SSE streaming · ADRs, model card & datasheet ✅ |
 | **v0.6** | proxy calibrated against two LLM judges · guardrail false-positive rate and an external attack set · production-embedder ablation · real-token SSE with retraction · `py.typed` ✅ |
-| **v0.7** ← current | API fails closed (corpus-root ingest, loopback-only without a key, output PII redaction) · revoked in-domain ceiling replaced by a pinned-set gate · locked, SHA-pinned, audited CI ✅ |
+| **v0.7** | API fails closed (corpus-root ingest, loopback-only without a key, output PII redaction) · revoked in-domain ceiling replaced by a pinned-set gate · locked, SHA-pinned, audited CI ✅ |
+| **v0.8** ← current | demo with the local models (real SSE tokens on `qwen3:32b`, one observed retraction, frozen transcript tested offline) · pre-registered overlap-1 out-of-domain rule on `nomic-embed-text` (holdout answered 18/22 → 19/22, 0/6 out-of-corpus answered) · Docker image built and smoke-tested in CI · audit covers the `finetune` extra ✅ |
 
 **Next: v1.0 (demo + close the documented gaps)**
 
