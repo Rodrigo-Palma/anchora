@@ -56,6 +56,13 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   results said `LoRA + 5` is never worse on a point estimate (it is lower than
   the answerable-only adapter on faithfulness and reference overlap) and that
   two overlapping reference-overlap intervals touch.
+- `.env.example` said an empty `ANCHORA_API_KEY` means "open dev mode"; since
+  v0.7 it means loopback only (`503` for anyone else). It now also lists
+  `ANCHORA_CORPUS_ROOT` and the ingest limits.
+- CONTRIBUTING and the demo listed five commands as what `make check` runs; it
+  runs nine targets, and CI adds the audit, the benchmark, the Docker smoke
+  test and Terraform. The `docs/` line in CONTRIBUTING named material that is
+  not there.
 
 ## [0.8.0] - 2026-10-16
 

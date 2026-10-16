@@ -29,17 +29,17 @@ ollama pull qwen3:32b
 
 ## Before opening a PR
 
-Run the full suite — the same set of checks as CI:
+Run the local gate:
 
 ```bash
 make check
-# equivalent to:
-#   uv run ruff check .
-#   uv run ruff format --check .
-#   uv run mypy
-#   uv run pytest
-#   uv run anchora eval
+# runs: lint fmt-check type test eval eval-honest calibration ood-floor adversarial
+# (see `make help` for what each target does)
 ```
+
+CI runs the same targets plus a dependency audit (`make audit`), the latency
+benchmark (`make bench`), a Docker build and smoke test, and `terraform
+fmt/validate`.
 
 Everything must pass green. The eval *gate* fails if retrieval recall drops
 below 1.0 or the average faithfulness falls below 0.70.
@@ -70,5 +70,5 @@ scripts/       fine-tune dataset, LoRA training, eval comparison
 infra/         Terraform (ECR, S3, SageMaker, IAM)
 tests/         pytest
 data/          corpus, golden set, fine-tune dataset
-docs/          architecture, demo, outreach material
+docs/          architecture, methodology, ADRs, model card, demo
 ```

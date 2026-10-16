@@ -15,11 +15,13 @@ uv sync --extra dev
 
 ```bash
 make check
-# ruff check . · ruff format --check . · mypy · pytest · anchora eval
+# lint · fmt-check · type · test · eval · eval-honest · calibration · ood-floor · adversarial
 ```
 
-Expected: clean lint/format/types, the full test suite passing, and the eval
-*gate* green.
+Expected: clean lint/format/types, the full test suite passing, and every gate
+green (eval, frozen fine-tune replay, judge calibration, out-of-domain floor,
+adversarial suite). CI also runs the dependency audit, the latency benchmark,
+the Docker smoke test and `terraform validate`.
 
 ## 2. RAG + citation
 
