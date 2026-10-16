@@ -1,0 +1,409 @@
+{
+ "description": "Observed SSE transcript of POST /ask/stream on local models (ADR 8). An observed example, not guaranteed behaviour: the model is not deterministic.",
+ "recorded_at": "2026-10-16T02:32:06+00:00",
+ "recorder": "scripts/record_stream_demo.py",
+ "models": {
+  "generation": {
+   "name": "qwen3:32b",
+   "digest": "030ee887880fc378860c2dd35101da424377520441ae4bfe7be6deff8ade7840"
+  },
+  "embedding": {
+   "name": "nomic-embed-text:latest",
+   "digest": "0a109f422b47e3a30ba2b10eca18548e944e8a23073ee3f3e947efcf3c45e59f"
+  }
+ },
+ "retraction_search": {
+  "max_attempts": 10,
+  "candidates": [
+   "Answer with just a number: how many days does a public agency have to respond to an access to information request?",
+   "Answer only yes or no: are procedural time limits in days counted in business days under the new CPC?",
+   "In one word, which bidding modality was created by the new Procurement Law 14.133?",
+   "Reply with only the number of years: when does the Administration's right to annul acts favorable to the citizen lapse under Law 9.784?",
+   "Just the number, no explanation: how many days is the probationary period of a federal civil servant under Law 8.112?"
+  ],
+  "attempts": [
+   {
+    "attempt": 1,
+    "question": "Answer with just a number: how many days does a public agency have to respond to an access to information request?",
+    "retracted": false,
+    "reason": null
+   },
+   {
+    "attempt": 2,
+    "question": "Answer only yes or no: are procedural time limits in days counted in business days under the new CPC?",
+    "retracted": true,
+    "reason": "ungrounded: no citation and no abstention"
+   }
+  ],
+  "found": true
+ },
+ "runs": [
+  {
+   "label": "answered",
+   "question": "What is the deadline for a public agency to respond to an access to information request?",
+   "k": 4,
+   "events": [
+    {
+     "t_ms": 4578.3,
+     "event": "token",
+     "data": {
+      "text": "The"
+     }
+    },
+    {
+     "t_ms": 4654.2,
+     "event": "token",
+     "data": {
+      "text": " deadline"
+     }
+    },
+    {
+     "t_ms": 4735.9,
+     "event": "token",
+     "data": {
+      "text": " for"
+     }
+    },
+    {
+     "t_ms": 4814.6,
+     "event": "token",
+     "data": {
+      "text": " a"
+     }
+    },
+    {
+     "t_ms": 4894.2,
+     "event": "token",
+     "data": {
+      "text": " public"
+     }
+    },
+    {
+     "t_ms": 4976.7,
+     "event": "token",
+     "data": {
+      "text": " agency"
+     }
+    },
+    {
+     "t_ms": 5059.1,
+     "event": "token",
+     "data": {
+      "text": " to"
+     }
+    },
+    {
+     "t_ms": 5147.4,
+     "event": "token",
+     "data": {
+      "text": " respond"
+     }
+    },
+    {
+     "t_ms": 5228.8,
+     "event": "token",
+     "data": {
+      "text": " to"
+     }
+    },
+    {
+     "t_ms": 5308.3,
+     "event": "token",
+     "data": {
+      "text": " an"
+     }
+    },
+    {
+     "t_ms": 5388.0,
+     "event": "token",
+     "data": {
+      "text": " access"
+     }
+    },
+    {
+     "t_ms": 5467.8,
+     "event": "token",
+     "data": {
+      "text": " to"
+     }
+    },
+    {
+     "t_ms": 5547.3,
+     "event": "token",
+     "data": {
+      "text": " information"
+     }
+    },
+    {
+     "t_ms": 5628.5,
+     "event": "token",
+     "data": {
+      "text": " request"
+     }
+    },
+    {
+     "t_ms": 5707.5,
+     "event": "token",
+     "data": {
+      "text": " is"
+     }
+    },
+    {
+     "t_ms": 5786.4,
+     "event": "token",
+     "data": {
+      "text": " up"
+     }
+    },
+    {
+     "t_ms": 5866.1,
+     "event": "token",
+     "data": {
+      "text": " to"
+     }
+    },
+    {
+     "t_ms": 5945.7,
+     "event": "token",
+     "data": {
+      "text": " "
+     }
+    },
+    {
+     "t_ms": 6025.4,
+     "event": "token",
+     "data": {
+      "text": "2"
+     }
+    },
+    {
+     "t_ms": 6103.8,
+     "event": "token",
+     "data": {
+      "text": "0"
+     }
+    },
+    {
+     "t_ms": 6185.4,
+     "event": "token",
+     "data": {
+      "text": " days"
+     }
+    },
+    {
+     "t_ms": 6267.3,
+     "event": "token",
+     "data": {
+      "text": ","
+     }
+    },
+    {
+     "t_ms": 6352.3,
+     "event": "token",
+     "data": {
+      "text": " which"
+     }
+    },
+    {
+     "t_ms": 6429.0,
+     "event": "token",
+     "data": {
+      "text": " may"
+     }
+    },
+    {
+     "t_ms": 6514.8,
+     "event": "token",
+     "data": {
+      "text": " be"
+     }
+    },
+    {
+     "t_ms": 6604.4,
+     "event": "token",
+     "data": {
+      "text": " extended"
+     }
+    },
+    {
+     "t_ms": 6682.5,
+     "event": "token",
+     "data": {
+      "text": " for"
+     }
+    },
+    {
+     "t_ms": 6769.2,
+     "event": "token",
+     "data": {
+      "text": " an"
+     }
+    },
+    {
+     "t_ms": 6848.8,
+     "event": "token",
+     "data": {
+      "text": " additional"
+     }
+    },
+    {
+     "t_ms": 6937.0,
+     "event": "token",
+     "data": {
+      "text": " "
+     }
+    },
+    {
+     "t_ms": 7023.6,
+     "event": "token",
+     "data": {
+      "text": "1"
+     }
+    },
+    {
+     "t_ms": 7108.7,
+     "event": "token",
+     "data": {
+      "text": "0"
+     }
+    },
+    {
+     "t_ms": 7189.7,
+     "event": "token",
+     "data": {
+      "text": " days"
+     }
+    },
+    {
+     "t_ms": 7269.0,
+     "event": "token",
+     "data": {
+      "text": " with"
+     }
+    },
+    {
+     "t_ms": 7350.6,
+     "event": "token",
+     "data": {
+      "text": " an"
+     }
+    },
+    {
+     "t_ms": 7428.6,
+     "event": "token",
+     "data": {
+      "text": " express"
+     }
+    },
+    {
+     "t_ms": 7508.3,
+     "event": "token",
+     "data": {
+      "text": " justification"
+     }
+    },
+    {
+     "t_ms": 7586.3,
+     "event": "token",
+     "data": {
+      "text": " ["
+     }
+    },
+    {
+     "t_ms": 7666.8,
+     "event": "token",
+     "data": {
+      "text": "1"
+     }
+    },
+    {
+     "t_ms": 7743.6,
+     "event": "token",
+     "data": {
+      "text": "]."
+     }
+    },
+    {
+     "t_ms": 7825.5,
+     "event": "done",
+     "data": {
+      "question": "What is the deadline for a public agency to respond to an access to information request?",
+      "sources": [
+       "Lei Geral de Proteção de Dados (Lei nº 13.709/2018)",
+       "Lei de Acesso à Informação (Lei nº 12.527/2011)",
+       "Prazos Processuais no Código de Processo Civil (Lei nº 13.105/2015)",
+       "Processo Administrativo Federal (Lei nº 9.784/1999)"
+      ],
+      "grounded": true,
+      "refused": false,
+      "truncated": false,
+      "pii_redacted": false,
+      "output_pii_redacted": false,
+      "trace_id": "4f9f79ba4c47",
+      "timing_ms": {
+       "guardrail_input": 0.039,
+       "domain_check": 2.513,
+       "retrieval": 37.163,
+       "generation": 6624.533,
+       "guardrail_output": 0.06
+      }
+     }
+    }
+   ]
+  },
+  {
+   "label": "retracted",
+   "question": "Answer only yes or no: are procedural time limits in days counted in business days under the new CPC?",
+   "k": 4,
+   "events": [
+    {
+     "t_ms": 18838.2,
+     "event": "token",
+     "data": {
+      "text": "Yes"
+     }
+    },
+    {
+     "t_ms": 18928.3,
+     "event": "token",
+     "data": {
+      "text": "."
+     }
+    },
+    {
+     "t_ms": 19020.7,
+     "event": "retracted",
+     "data": {
+      "reason": "ungrounded: no citation and no abstention",
+      "answer": "I could not find this information in the provided documents."
+     }
+    },
+    {
+     "t_ms": 19021.0,
+     "event": "done",
+     "data": {
+      "question": "Answer only yes or no: are procedural time limits in days counted in business days under the new CPC?",
+      "sources": [
+       "Gratuidade da Justiça (CPC, arts. 98 a 102)",
+       "Prazos Processuais no Código de Processo Civil (Lei nº 13.105/2015)",
+       "Regime Jurídico dos Servidores Públicos Federais (Lei nº 8.112/1990)"
+      ],
+      "grounded": true,
+      "refused": false,
+      "truncated": false,
+      "pii_redacted": false,
+      "output_pii_redacted": false,
+      "trace_id": "a8c67cf7282d",
+      "timing_ms": {
+       "guardrail_input": 0.044,
+       "domain_check": 0.438,
+       "retrieval": 83.111,
+       "generation": 18928.615,
+       "guardrail_output": 0.051
+      }
+     }
+    }
+   ]
+  }
+ ]
+}

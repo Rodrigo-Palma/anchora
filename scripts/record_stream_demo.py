@@ -156,7 +156,8 @@ def record(base_url: str, max_attempts: int, out: Path) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(transcript, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     found = "found" if retracted is not None else "NOT found"
-    print(f"retraction {found} in {len(attempts)}/{max_attempts} attempts -> {out}")
+    shown = out.relative_to(_ROOT) if out.is_relative_to(_ROOT) else out
+    print(f"retraction {found} in {len(attempts)}/{max_attempts} attempts -> {shown}")
     return 0
 
 
