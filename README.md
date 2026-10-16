@@ -506,9 +506,13 @@ roadmap closes known gaps instead of chasing new surface:
 - [x] **Judge-calibrated threshold**: measured against two judges; the floor
   stays at 0.70 because no stable alternative emerged
   ([ADR 7](docs/adr/0007-faithfulness-threshold.md)).
-- [ ] **Out-of-domain floor on the production embedder**: calibrate the dense
-  similarity floor, which could recover the 4 holdout questions the lexical
-  floor rejects ([ADR 6 addendum](docs/adr/0006-out-of-domain-floor.md#addendum-2026-10-09-measured-on-the-holdout-the-margin-does-not-hold)).
+- [ ] **Out-of-domain floor on the production embedder**: measured on
+  `nomic-embed-text` (`make ood-floor`). As wired the dense floor cannot
+  recover the 4 holdout questions the lexical floor rejects: it runs after the
+  lexical check and can only add abstentions, and on these sets it adds them
+  only to real questions. A pre-registered overlap-1 rule is the next step; it
+  can reach at most 3 of the 4 (`ho-licitacao-substituiu` has overlap 0)
+  ([ADR 6 addendum](docs/adr/0006-out-of-domain-floor.md#addendum-2026-10-15-measured-on-nomic-embed-text)).
 
 **Deliberately out of scope** (stated so the boundaries are a choice, not an omission)
 
@@ -545,8 +549,8 @@ uv run pytest
 ```
 
 Or all at once: `make check` runs lint, format, types, tests, the eval gate,
-the frozen fine-tune replay, the frozen judge calibration and the adversarial
-suite. The latency benchmark
+the frozen fine-tune replay, the frozen judge calibration, the frozen
+out-of-domain floor tables and the adversarial suite. The latency benchmark
 runs separately (`make bench`), as in CI. `make audit` runs `pip-audit` on the
 locked runtime, dev and finetune dependencies (the finetune extra is audited
 from `uv.lock` without being installed), the same target CI runs after

@@ -44,6 +44,16 @@ offline.
   outputs makes the reported numbers reproducible in CI. A drift from the values
   in `finetuning-results.md` fails the build.
 
+## `eval/ood-similarities.json`: frozen out-of-domain floor signals
+
+- **What:** for each of the 64 labelled questions (golden, holdout answerable,
+  holdout out-of-corpus, `ood-*` attacks), its distinct corpus overlap and its
+  top `nomic-embed-text` cosine to the corpus, with the Ollama version and the
+  model digest (`scripts/calibrate_ood_floor.py --run`).
+- **Why:** the cosine needs Ollama; the tables in ADR 6 must not. `make
+  ood-floor` rebuilds them from this file and recomputes the overlap from the
+  corpus. A new model digest changes the cosines, so re-run and re-publish.
+
 ## `finetune/`: instruction dataset
 
 - **What:** the built instruction/completion pairs for LoRA fine-tuning
