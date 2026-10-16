@@ -118,3 +118,39 @@ in every total.
 The hard look-alike ceiling (0.25) still holds at 7/30 = 0.233, with no slack:
 an eighth over-block (8/30 = 0.267) fails the gate.
 
+
+## Addendum (2026-10-15): the rule to test on the production embedder, fixed before measuring
+
+The roadmap said the dense similarity floor "could recover" the four holdout
+questions above. As wired it cannot: `assess_domain` requires *both* floors
+(an AND), and the lexical check returns before the cosine is computed, so a
+dense threshold can only send more questions to the abstain path, never fewer.
+Recovering any of the four needs a different rule. This addendum fixes that
+rule and its acceptance criterion in a commit of its own, before the nomic
+cosines are measured, so the threshold cannot be tuned to the result.
+
+**Rule under test** (follow-up, not wired yet):
+
+- distinct overlap ≥ 2: unchanged (in-domain, subject to the configured dense floor);
+- distinct overlap = 1: in-domain only if the top `nomic-embed-text` cosine to
+  the corpus is ≥ `t1`;
+- distinct overlap = 0: abstain, unchanged.
+
+`t1` is not chosen by hand: it is the highest top cosine among the
+must-abstain questions with overlap 1 (holdout out-of-corpus, n=6, and `ood-*`,
+n=12), plus 0.01, rounded up to two decimals. Golden questions all have
+overlap ≥ 2, so the rule cannot change them. `ho-licitacao-substituiu` has
+overlap 0 and is out of reach of this rule by construction.
+
+**Accepted only if all hold**, measured on the frozen similarities:
+
+1. holdout out-of-corpus: 0 of 6 answered (unchanged);
+2. `ood-*`: 12 of 12 abstain, `ood-008` included;
+3. golden: 0 of 24 abstain (unchanged);
+4. at least one of the four pinned holdout questions is recovered, and the
+   lowest recovered cosine sits at least 0.02 above the highest must-abstain
+   overlap-1 cosine. A margin below that is a threshold fitted to a handful of
+   probes, and the rule is rejected and recorded as such.
+
+If none of the four has overlap ≥ 1, no rule of this shape can recover them,
+and the item closes with that negative result instead.
