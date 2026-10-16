@@ -43,6 +43,10 @@ def test_ask_offline(client: TestClient) -> None:
     body = resp.json()
     assert body["grounded"] is True
     assert body["sources"]
+    citations = body["citations"]
+    assert [c["n"] for c in citations] == list(range(1, len(citations) + 1))
+    assert {"n", "title", "doc_id"} == set(citations[0])
+    assert citations[0]["title"] in body["answer"]
 
 
 def test_ask_redacts_pii(client: TestClient) -> None:
@@ -105,6 +109,7 @@ def test_ask_stream_emits_tokens_then_done(client: TestClient) -> None:
     done = json.loads(done_payload)
     assert done["grounded"] is True
     assert done["sources"]
+    assert [c["n"] for c in done["citations"]] == list(range(1, len(done["citations"]) + 1))
     assert len(done["trace_id"]) == 12
 
 

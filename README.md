@@ -184,14 +184,21 @@ curl -s -X POST localhost:8000/ask -H 'content-type: application/json' \
   -d '{"question":"What are the bidding modalities?","use_llm":false,"provider":"hash"}'
 ```
 
+Resolving `[n]`: `/ask`, the stream's `done` event and the CLI return
+`citations`, one `{n, title, doc_id}` per retrieved excerpt in the order of the
+numbered context the model saw, so `[n]` in the answer is `citations[n-1]`. Two
+excerpts of the same law keep two entries. `sources` is kept for compatibility:
+it is the distinct titles sorted alphabetically and does **not** follow the
+`[n]` numbering, so do not resolve a citation against it.
+
 Streaming (Server-Sent Events): with the model on, `token` events carry text as
 Ollama decodes it; the grounding check runs on the complete answer, and an
 ungrounded one is followed by a `retracted` event with the abstention that
 replaces it ([ADR 8](docs/adr/0008-streaming-with-output-validation.md)). Model
 text that contains PII (CPF, e-mail, phone) is retracted the same way and
-replaced by its redacted form. A terminal `done` event carries sources,
-grounding, the trace, and `truncated: true` if the model stream broke after the
-first token:
+replaced by its redacted form. A terminal `done` event carries the citations,
+sources, grounding, the trace, and `truncated: true` if the model stream broke
+after the first token:
 
 ```bash
 curl -N -s -X POST localhost:8000/ask/stream -H 'content-type: application/json' \

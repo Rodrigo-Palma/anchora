@@ -42,12 +42,30 @@ class ToolCall:
     output: str
 
 
+@dataclass(frozen=True)
+class Citation:
+    """What an inline ``[n]`` in the answer points to.
+
+    ``n`` is the 1-based position of the excerpt in the numbered context the
+    model was given (see :func:`anchora.llm.build_context`), so it resolves the
+    answer's citations one to one. Two excerpts of the same law keep two
+    entries.
+    """
+
+    n: int
+    title: str
+    doc_id: str
+
+
 @dataclass
 class AgentResult:
     question: str
     answer: str
+    # Distinct source titles, sorted alphabetically. Kept for compatibility:
+    # this list does NOT follow the [n] numbering; use ``citations`` for that.
     sources: list[str]
     grounded: bool
+    citations: list[Citation] = field(default_factory=list)
     tool_calls: list[ToolCall] = field(default_factory=list)
     refused: bool = False
     trace: Trace = field(default_factory=Trace)
@@ -154,6 +172,7 @@ class Agent:
             question=prepared.question,
             answer=final,
             sources=sorted({chunk.title or chunk.doc_id for chunk in prepared.chunks}),
+            citations=citations_for(prepared.chunks),
             grounded=True,  # either cited, or an explicit abstention (itself grounded)
             tool_calls=prepared.tool_calls,
             trace=prepared.trace,
@@ -195,6 +214,14 @@ class Agent:
             if generated:
                 return _append_fact(generated, deadline_fact)
         return _append_fact(_extractive_answer(chunks), deadline_fact)
+
+
+def citations_for(chunks: list[Chunk]) -> list[Citation]:
+    """Number the excerpts exactly as the answer prompt does: ``[1]`` is ``chunks[0]``."""
+    return [
+        Citation(n=i + 1, title=chunk.title or chunk.doc_id, doc_id=chunk.doc_id)
+        for i, chunk in enumerate(chunks)
+    ]
 
 
 def _extractive_answer(chunks: list[Chunk]) -> str:

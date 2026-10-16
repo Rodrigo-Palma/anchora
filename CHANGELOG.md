@@ -7,6 +7,17 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
 
 ## [Unreleased]
 
+### Added
+- `citations` on `/ask`, on the stream's `done` event and in the CLI
+  (`[n] Title`): one `{n, title, doc_id}` per retrieved excerpt, numbered as in
+  the prompt, so every inline `[n]` resolves to its law. Repeated documents keep
+  one entry per excerpt.
+
+### Changed
+- `sources` is unchanged and kept for compatibility, now documented as the
+  distinct titles in alphabetical order: it does not follow the `[n]`
+  numbering (an answer citing `[1]` could be read against the wrong law).
+
 ## [0.8.0] - 2026-10-16
 
 Close two roadmap items with measurements: the out-of-domain floor on the

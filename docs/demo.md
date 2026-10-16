@@ -27,8 +27,9 @@ Expected: clean lint/format/types, the full test suite passing, and the eval
 uv run anchora ask "What are the types of public procurement?" --provider hash --no-llm
 ```
 
-Expected: an extractive answer **with `[n]` citation** and the list of sources
-retrieved from the corpus (Lei 14.133).
+Expected: an extractive answer **with `[n]` citation**, a `Citations:` block
+that resolves each `[n]` (`[1] Nova Lei de Licitações ...`) and the distinct
+sources retrieved from the corpus (alphabetical, not in `[n]` order).
 
 ## 3. Tool use (deadline calculation)
 
@@ -172,5 +173,8 @@ How to read it:
   retracted run the first token arrived 18.8 s after the request, 0.1 s before
   the 18.9 s generation ended, so streaming saved almost nothing there. Single observations, not a
   latency benchmark (`make bench` measures the offline pipeline).
-- `done` lists the distinct source documents of the retrieved chunks, not the
-  indices the answer cited.
+- In this transcript `done` lists only `sources`: the distinct source documents
+  of the retrieved chunks, sorted alphabetically, which do not follow the `[n]`
+  numbering. It was frozen before `citations` existed; a live `done` now also
+  carries `citations` (`{n, title, doc_id}` in prompt order), which resolves
+  each `[n]`.

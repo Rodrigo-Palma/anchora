@@ -43,6 +43,10 @@ def _cmd_ask(args: argparse.Namespace) -> int:
     agent = Agent(store, k=args.k, provider=args.provider, use_llm=not args.no_llm)
     result = agent.run(args.question)
     print(result.answer)
+    if result.citations:
+        print("\nCitations:")
+        for citation in result.citations:
+            print(f"[{citation.n}] {citation.title}")
     if result.sources:
         print("\nSources: " + ", ".join(result.sources))
     if args.verbose:

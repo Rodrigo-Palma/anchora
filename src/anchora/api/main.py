@@ -26,6 +26,7 @@ import json
 import secrets
 import uuid
 from collections.abc import Awaitable, Callable, Iterator
+from dataclasses import asdict
 from pathlib import Path
 from typing import Annotated
 
@@ -78,10 +79,23 @@ class ToolCallOut(BaseModel):
     output: str
 
 
+class CitationOut(BaseModel):
+    n: int = Field(description="The [n] used inline in the answer (1-based).")
+    title: str
+    doc_id: str
+
+
 class AskResponse(BaseModel):
     question: str
     answer: str
-    sources: list[str]
+    sources: list[str] = Field(
+        description="Distinct source titles, sorted alphabetically. Kept for "
+        "compatibility; does not follow the [n] numbering (use citations)."
+    )
+    citations: list[CitationOut] = Field(
+        description="One entry per retrieved excerpt, in prompt order: "
+        "citations[i].n == i + 1 resolves [n] in the answer."
+    )
     grounded: bool
     refused: bool
     pii_redacted: bool
@@ -173,6 +187,7 @@ def create_app() -> FastAPI:
             question=question,
             answer=redact_pii(result.answer) if output_pii else result.answer,
             sources=result.sources,
+            citations=[CitationOut(**asdict(c)) for c in result.citations],
             grounded=result.grounded,
             refused=result.refused,
             pii_redacted=pii_found,
@@ -208,6 +223,7 @@ def create_app() -> FastAPI:
                 {
                     "question": question,
                     "sources": result.sources,
+                    "citations": [asdict(c) for c in result.citations],
                     "grounded": result.grounded,
                     "refused": result.refused,
                     "truncated": truncated,

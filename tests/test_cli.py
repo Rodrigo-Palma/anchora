@@ -10,6 +10,8 @@ def test_ask_offline(capsys: pytest.CaptureFixture[str]) -> None:
     assert code == 0
     out = capsys.readouterr().out
     assert "Sources:" in out
+    assert "\n[1] Nova Lei de Licitações" in out
+    assert "\n[4] " in out
 
 
 def test_ingest_without_out(capsys: pytest.CaptureFixture[str]) -> None:
