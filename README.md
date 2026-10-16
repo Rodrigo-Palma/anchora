@@ -38,7 +38,7 @@ nomic rows.
 |---|---|---|
 | Retrieval recall@4, 22 unseen questions | nomic hybrid **22/22** [0.85, 1.00]; offline `hash` hybrid 20/22 | not significantly different (McNemar p = 0.5) · [ablation](#retrieval-hybrid-bm25--dense) |
 | Correct citation, LoRA vs base few-shot (n=22) | **18/22 vs 11/22**, 7 vs 0 discordant | p = 0.016, not pre-registered (0.094 after Bonferroni) · [fine-tuning](#fine-tuning-the-train-set-leak-and-the-held-out-eval) |
-| CI faithfulness proxy vs LLM judges (100 answers) | Spearman **0.49** to either judge; judges agree 0.78 | the proxy is a regression floor, not a judge · [calibration](docs/eval-calibration.md) |
+| CI faithfulness proxy vs LLM judges (100 answers) | Spearman **0.50 / 0.49** to the qwen3 / gemma4 judge; judges agree 0.78 | the proxy is a regression floor, not a judge · [calibration](docs/eval-calibration.md) |
 | Public injection set (deepset, 60 attacks) | regex catches **1/60**; 58/60 still not answered | the domain floor held, not the detector · [external](#external-attacks-not-gated) |
 | In-house attack suite (46) | 44/46 handled, 2 documented gaps | written by the guardrails' author · [suite](#adversarial-guardrail-suite) |
 | Legitimate questions blocked | in-domain **4/46**; attack look-alikes 7/30 | the price of the guardrails · [false positives](#adversarial-guardrail-suite) |
@@ -60,7 +60,7 @@ of answering.** Components:
   gates CI;
 - **reproducible evals in CI**: deterministic lexical proxies gate the build
   with no model and no network, [calibrated against two local LLM judges](docs/eval-calibration.md)
-  (Spearman about 0.49 with either judge, 0.78 between the judges), with the
+  (Spearman 0.50 / 0.49 with the qwen3 / gemma4 judge, 0.78 between the judges), with the
   judge scores frozen so CI re-checks the calibration offline;
 - **tracing**: every answer carries a `trace_id` and per-stage timings, with
   a [latency benchmark](#latency) that gates against p95 regressions;
@@ -443,7 +443,7 @@ What this sample supports:
 
 - **Citation: a difference, with a caveat.** The adapter cites the right
   document on 7 questions the baseline gets wrong, and the reverse never happens
-  (p = 0.016). The single-proportion intervals touch at the edge (0.61 vs 0.69);
+  (p = 0.016). The single-proportion intervals overlap ([0.61, 0.93] vs [0.31, 0.69]);
   the paired test is the sharper read. The comparison was not pre-registered, and
   across the six paired comparisons the report prints, a Bonferroni correction
   puts it at 0.094.

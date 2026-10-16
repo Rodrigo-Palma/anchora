@@ -67,7 +67,7 @@ independent it would be 0.28. The truth is in between.
 ## Reading
 
 - **The proxy tracks the judges moderately, and about equally for both.**
-  Spearman is about 0.49 against either judge, with intervals from 0.25 to 0.72.
+  Spearman is 0.50 / 0.49 against the qwen3 / gemma4 judge (0.498 / 0.490), with intervals from 0.25 to 0.72.
   The two judges agree with each other more (Spearman 0.78, kappa 0.60), so the
   proxy reaches roughly two thirds of the judge-to-judge agreement.
 - **The judges are not interchangeable.** They give the same 0-4 score on 75 of

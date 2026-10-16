@@ -19,6 +19,11 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   modalities?") was cited but not answered (answer relevance 0.00 in
   `anchora eval`); the README now states that the fallback always cites but
   does not promise to answer.
+- Proxy-vs-judge Spearman now reads 0.50 / 0.49 (qwen3 / gemma4) in the
+  README, `docs/eval-calibration.md` and ADR 7, matching `make calibration`
+  (0.498 / 0.490); it was rounded to 0.49 for both.
+- The LoRA citation comparison now says the single-proportion intervals
+  overlap ([0.61, 0.93] vs [0.31, 0.69]); it said they touch at the edge.
 - `sources` is unchanged and kept for compatibility, now documented as the
   distinct titles in alphabetical order: it does not follow the `[n]`
   numbering (an answer citing `[1]` could be read against the wrong law).
