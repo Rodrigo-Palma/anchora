@@ -7,6 +7,34 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-10-16
+
+Close two roadmap items with measurements: the out-of-domain floor on the
+production embedder and the demo with the local models. The container image is
+now built and smoke-tested in CI, and the audit covers the finetune extra.
+
+### Added
+- **Demo with the local models** (`docs/demo.md#with-local-models`): an
+  asciinema recording (`docs/demo-local.cast`) of real SSE tokens on
+  `qwen3:32b` with `nomic-embed-text`, both pinned by digest, and the same run
+  frozen in `data/demo/stream-transcript.json`. The golden `lai-prazo` question
+  streams 40 tokens and ends cited; one answer is retracted (ADR 8). It is an
+  observed example, not guaranteed behaviour.
+- `scripts/record_stream_demo.py`: the recorder. Its candidate questions and a
+  budget of 10 attempts were committed before any recording run; the
+  retraction appeared on attempt 2 of 10. `tests/test_demo_transcript.py`
+  checks the transcript's event order and schema offline (no model needed).
+- **Frozen out-of-domain similarities** (`scripts/calibrate_ood_floor.py`,
+  `data/eval/ood-similarities.json`): distinct corpus-token overlap and top
+  `nomic-embed-text` cosine of the labelled questions, frozen with the model
+  digest. `make ood-floor` rebuilds the ADR 6 tables offline and is part of
+  `make check` and CI.
+- **Docker smoke test in CI** (`docker-smoke` job, `scripts/docker_smoke.sh`,
+  `make docker-smoke`): builds the image and checks `/health`, a `401` on
+  `/ask` without the key, a `200` on `/ask` with at least one source (lazy
+  corpus ingestion inside the image) and a `healthy` `HEALTHCHECK`. Image size
+  is documented in `docs/architecture.md` (56.3 MB compressed on linux/arm64).
+
 ### Changed
 - Out-of-domain floor on the Ollama embedder: a question sharing exactly one
   distinct corpus token is now in-domain if its top `nomic-embed-text` cosine
@@ -14,9 +42,15 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   off). The rule and its acceptance criterion were registered in ADR 6 before
   the cosines were measured; on the frozen similarities it recovers 1 holdout
   question (18/22 -> 19/22 answered) while 0/6 out-of-corpus questions are
-  answered and 12/12 attacks still abstain. The `hash` path (CI, adversarial
-  suite) is unchanged; `make ood-floor` is the gate for this path. If Ollama is
-  unreachable, the question abstains.
+  answered and 12/12 attacks still abstain. The holdout is spent for this
+  decision. The `hash` path (CI, adversarial suite) is unchanged; `make
+  ood-floor` is the gate for this path. If Ollama is unreachable, the question
+  abstains.
+- The dense similarity floor as wired only adds abstentions, all on real
+  questions, so it stays off (ADR 6 addendum).
+- Container `HEALTHCHECK`: `--start-period=10s --start-interval=1s`, so the
+  container no longer waits for the 30 s interval to report `healthy` after
+  start. The steady-state probe is unchanged.
 
 ### Security
 - `make audit` and the CI audit step now cover the `finetune` extra too
@@ -24,6 +58,15 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   only runtime + dev were audited, and the finetune set carried 16 `pip-audit`
   findings in 8 packages that no gate saw. CI calls `make audit`, so the two
   cannot drift.
+- Finetune extra refreshed in the lockfile: `torch` 2.14.1, `transformers`
+  5.20.0, `datasets` 5.1.0, `accelerate` 1.15.0, `aiohttp` 3.14.5 and the
+  flagged transitives. `pyproject.toml` floors are unchanged.
+
+### Documentation
+- README roadmap: the local-model demo and the production-embedder
+  out-of-domain floor are closed, each stated as what was measured.
+- `docs/architecture.md`: a Container image section (build stages, non-root
+  user, image size, what the smoke test checks).
 
 ## [0.7.0] - 2026-10-09
 
