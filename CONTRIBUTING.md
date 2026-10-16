@@ -49,7 +49,8 @@ below 1.0 or the average faithfulness falls below 0.70.
 - **Style**: `ruff format` (line 100). Do not format by hand.
 - **Lint**: rules `E,F,I,N,UP,B,C4,SIM,RUF`. Fix, don't silence — `noqa`
   only with justification.
-- **Types**: `mypy --strict` covers `src`, `pipeline`, and `scripts`. No loose `Any`.
+- **Types**: `uv run mypy` runs in strict mode (`strict = true` in `pyproject.toml`)
+  over `src`, `pipeline`, and `scripts`. No loose `Any`.
 - **Lazy imports**: heavy/optional dependencies (torch, peft, sagemaker)
   are imported only inside the functions that use them, behind optional extras.
 - **Tests**: every new behavior comes with a test. Prefer the offline path

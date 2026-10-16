@@ -59,7 +59,7 @@ def mcnemar_exact(only_a: int, only_b: int) -> float:
     n = only_a + only_b
     if n == 0:
         return 1.0
-    tail = sum(math.comb(n, i) for i in range(min(only_a, only_b) + 1)) / 2**n
+    tail = sum(math.comb(n, i) for i in range(min(only_a, only_b) + 1)) / (1 << n)
     return min(1.0, 2.0 * tail)
 
 

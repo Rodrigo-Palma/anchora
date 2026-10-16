@@ -42,6 +42,10 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   were FastAPI's default routes, which bypass route dependencies: with a key
   set they answered `200` without one, and in dev mode a non-loopback peer got
   `503` on `/ask` but `200` on the docs and the schema.
+- mypy now runs with `strict = true`, as README and CONTRIBUTING already
+  claimed; the config only had `disallow_untyped_defs`, and `--strict` found
+  two `no-any-return` errors (`stats.mcnemar_exact`, the API's `get_store`),
+  both fixed.
 
 ## [0.8.0] - 2026-10-16
 

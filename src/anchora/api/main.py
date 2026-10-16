@@ -171,7 +171,8 @@ def create_app() -> FastAPI:
             root = _corpus_root()
             app.state.store = _bounded_ingest(root)
             app.state.docs_indexed = len(corpus_files(root))
-        return app.state.store
+        store: VectorStore = app.state.store  # app.state is untyped
+        return store
 
     @app.get("/health")
     def health() -> dict[str, object]:
