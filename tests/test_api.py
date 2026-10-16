@@ -3,10 +3,12 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import httpx
 import pytest
 from fastapi.testclient import TestClient
 
 from anchora import agent as agent_module
+from anchora import embeddings
 from anchora.api.main import create_app
 from anchora.config import settings
 
@@ -222,3 +224,39 @@ def test_ask_redacts_pii_in_the_model_answer(
     assert "a.b@example.com" not in body["answer"]
     assert "[REDACTED_EMAIL]" in body["answer"]
     assert body["output_pii_redacted"] is True
+
+
+@pytest.mark.parametrize(
+    ("path", "body"),
+    [
+        ("/ask", {"question": "x", "use_llm": False, "provider": "zzz"}),
+        ("/ask/stream", {"question": "x", "use_llm": False, "provider": "zzz"}),
+        ("/ingest", {"provider": "zzz"}),
+    ],
+)
+def test_unknown_provider_is_rejected_at_the_edge(
+    client: TestClient, path: str, body: dict[str, object]
+) -> None:
+    assert client.post(path, json=body).status_code == 422
+
+
+_IN_DOMAIN = "qual o prazo de recurso administrativo na lei 9784"
+
+
+def test_embedding_backend_down_returns_503_not_500(
+    client: TestClient, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client.post("/ingest", json={"provider": "hash"})
+
+    def refuse(text: str) -> list[float]:
+        raise httpx.ConnectError("[Errno 61] Connection refused")
+
+    monkeypatch.setattr(embeddings, "_ollama_embed", refuse)
+    for path in ("/ask", "/ask/stream"):
+        resp = client.post(
+            path, json={"question": _IN_DOMAIN, "use_llm": False, "provider": "ollama"}
+        )
+        assert resp.status_code == 503
+        assert resp.json() == {"detail": "embedding provider unavailable"}
+    resp = client.post("/ingest", json={"provider": "ollama"})
+    assert resp.status_code == 503

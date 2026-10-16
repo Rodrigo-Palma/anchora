@@ -39,6 +39,11 @@ no tag or GitHub release; their entries describe the history up to the
   keeps the old order.
 
 ### Fixed
+- `provider` on `/ask`, `/ask/stream` and `/ingest` now accepts only
+  `"ollama"` or `"hash"` (the CLI's choices) and answers `422` otherwise. Any
+  other string fell through to Ollama. An unreachable embedding backend now
+  returns `503 {"detail": "embedding provider unavailable"}` instead of a `500`
+  with the `httpx` traceback in the log.
 - A question whose deadline falls past `9999-12-31` (e.g. "15 days from
   9999-12-31") returned `500` on `/ask` and `/ask/stream`: `date + timedelta`
   raised `OverflowError`, which the agent's `except ValueError` did not catch.

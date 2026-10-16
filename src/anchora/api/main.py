@@ -26,13 +26,15 @@ from __future__ import annotations
 
 import ipaddress
 import json
+import logging
 import secrets
 import uuid
 from collections.abc import Awaitable, Callable, Iterator
 from dataclasses import asdict
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 
+import httpx
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
 from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
@@ -47,6 +49,11 @@ from anchora.store import VectorStore
 
 _REQUEST_ID_HEADER = "x-request-id"
 
+_log = logging.getLogger(__name__)
+
+# Same choices as the CLI: anything else used to fall through to Ollama.
+Provider = Literal["ollama", "hash"]
+
 _DEFAULT_CORPUS = (Path(__file__).resolve().parents[3] / "data" / "corpus").resolve()
 
 
@@ -56,7 +63,7 @@ class IngestRequest(BaseModel):
         description="Directory to ingest, relative to the configured corpus root "
         "(an absolute path must also resolve inside it); defaults to the root.",
     )
-    provider: str | None = Field(
+    provider: Provider | None = Field(
         default=None,
         description='Embedding provider override ("ollama" or "hash").',
     )
@@ -71,7 +78,7 @@ class AskRequest(BaseModel):
     question: str = Field(min_length=1, max_length=2000)
     k: int = Field(default=settings.top_k, ge=1, le=20)
     use_llm: bool = True
-    provider: str | None = Field(
+    provider: Provider | None = Field(
         default=None,
         description="Embedding provider for the query; must match how the store "
         'was indexed ("ollama" or "hash").',
@@ -135,6 +142,12 @@ def create_app() -> FastAPI:
         response = await call_next(request)
         response.headers[_REQUEST_ID_HEADER] = request_id
         return response
+
+    @app.exception_handler(httpx.HTTPError)
+    async def embedding_backend_down(request: Request, exc: httpx.HTTPError) -> JSONResponse:
+        """Map an unreachable embedding backend to 503 without echoing its error."""
+        _log.warning("embedding backend error on %s: %s", request.url.path, type(exc).__name__)
+        return JSONResponse(status_code=503, content={"detail": "embedding provider unavailable"})
 
     def require_api_key(
         request: Request, x_api_key: Annotated[str | None, Header()] = None
