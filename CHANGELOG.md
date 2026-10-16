@@ -46,6 +46,16 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   claimed; the config only had `disallow_untyped_defs`, and `--strict` found
   two `no-any-return` errors (`stats.mcnemar_exact`, the API's `get_store`),
   both fixed.
+- Docs that had drifted from the code or the measurements: the architecture
+  doc pointed to `scripts/compare_evals.py` for DeepEval/RAGAS judges (it runs
+  only the lexical harness; the judge is `scripts/calibrate_judge.py --run`);
+  the methodology still called the production-embedder floor "not calibrated"
+  after v0.8 measured it; the model card named TRL's
+  `DataCollatorForCompletionOnlyLM` (the script has its own collator) and
+  "3 epochs" (the promoted run is up to 30 with early stopping); the LoRA
+  results said `LoRA + 5` is never worse on a point estimate (it is lower than
+  the answerable-only adapter on faithfulness and reference overlap) and that
+  two overlapping reference-overlap intervals touch.
 
 ## [0.8.0] - 2026-10-16
 

@@ -327,7 +327,7 @@ What 22 and 6 questions support:
    is a token-overlap proxy, so this says the adapter's answers reuse context
    tokens, not that they are correct.
 2. **Reference overlap** on unseen answers is 0.52 [0.36, 0.68] for the LoRA vs
-   0.24 [0.12, 0.38] for few-shot: higher, with intervals touching. The earlier
+   0.24 [0.12, 0.38] for few-shot: higher, with overlapping intervals. The earlier
    0.73 was inflated by train == test.
 3. **The holdout exposed a failure mode the leaked eval could not show:** the
    LoRA refused 0 of the 6 out-of-corpus questions. It fabricated answers *with
@@ -426,7 +426,10 @@ to 5/6 (p = 0.125). The faithfulness and overlap differences between the three
 adapters all have overlapping intervals.
 
 **`LoRA + 5 abstention` is the promotion candidate** because it is never worse on
-a point estimate and is the smaller dose:
+a point estimate on the gated metrics (citation-correct, abstention) and is the
+smaller dose. It is not best everywhere: the answerable-only adapter has higher
+faithfulness (0.79 vs 0.73) and reference overlap (0.52 vs 0.46), with
+overlapping intervals. Data and artifact:
 `data/finetune/instructions-abstention5.jsonl`,
 `artifacts/lora-anchora-qwen15b-abstention5-lr1e4-e30`. Against the few-shot
 baseline its citation gain is the one difference this holdout resolves

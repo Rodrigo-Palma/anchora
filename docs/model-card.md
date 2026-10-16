@@ -18,8 +18,8 @@ against `qwen3:32b` on the same holdout, which has not been run.
 |---|---|
 | Model | `anchora-qa` LoRA adapter (`v0.3-lora5`) |
 | Base model | `Qwen/Qwen2.5-1.5B-Instruct` |
-| Method | LoRA (PEFT), completion-only loss (`DataCollatorForCompletionOnlyLM`) |
-| Hyperparameters | r=16, α=32, 3 epochs; see finetuning-results.md Exp. F for the promoted run's LR / early-stopping |
+| Method | LoRA (PEFT), completion-only loss (custom `CompletionCollator` in `scripts/finetune_lora.py`, prompt tokens masked to -100) |
+| Hyperparameters | r=16, α=32, lr 1e-4, up to 30 epochs with early stopping (patience 5): the Exp. F recipe in finetuning-results.md |
 | Training data | 24-question golden set + 5 abstention examples ([datasheet](../data/README.md)) |
 | Intended use | Cited Q&A over the bundled Brazilian public-law corpus, local-first |
 | Out of scope | Legal advice; any domain outside the ingested corpus |

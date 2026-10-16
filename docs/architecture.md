@@ -57,9 +57,10 @@ hash`.
 ### Why lexical proxies in the evals?
 
 The *gate* must be reproducible on every build. Lexical proxies for
-faithfulness/recall give a floor with no cost or variance. LLM *judges*
-(DeepEval/RAGAS via Ollama) remain available locally through
-`scripts/compare_evals.py`.
+faithfulness/recall give a floor with no cost or variance. A local LLM judge
+on Ollama (not DeepEval/RAGAS, which are not dependencies) runs through
+`scripts/calibrate_judge.py --run`, and `make calibration` reports how well the
+proxy tracks it (ADR 1, ADR 7).
 
 ### Deterministic guardrails
 

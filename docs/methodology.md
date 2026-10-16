@@ -147,7 +147,12 @@ behaviour for clients that cannot handle a retraction.
   regression test for known phrasings; a learned classifier evaluated on
   external data would be the next step.
 - The out-of-domain floor costs 4 of 22 legitimate holdout questions on the
-  offline embedder. The dense similarity floor on the production embedder is
-  wired but not calibrated.
+  offline embedder. On the production embedder (`nomic-embed-text`) it was
+  measured in v0.8: the dense similarity floor as wired only adds abstentions,
+  so it stays off, and the pre-registered overlap-1 rule recovers one question
+  (holdout answerable answered 18/22 → 19/22, 0/6 out-of-corpus answered). That
+  is one question, not a rate change, and the holdout is spent for this
+  decision: a new out-of-domain set is needed to measure how the rule
+  generalizes (ADR 6, both 2026-10-15 addenda).
 - The faithfulness proxy is the CI signal; the judge is the reference. Both are
   automatic: no human labels exist in this repo.
