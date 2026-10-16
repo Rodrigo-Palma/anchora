@@ -95,6 +95,17 @@ offline.
 - **Use:** `make adversarial-external`, an ungated generalization measurement.
   It is not used to write or tune any guardrail pattern.
 
+## `demo/stream-transcript.json`: observed SSE run on local models
+
+- **What:** the events of one run of `POST /ask/stream` on `qwen3:32b` +
+  `nomic-embed-text` (digests inside): a cited answer, the log of the
+  retraction search (pre-declared candidates and attempt budget) and the run
+  that retracted, each event with its time since the request.
+- **How:** `scripts/record_stream_demo.py` against `uv run anchora serve`.
+- **Use:** evidence for the local-model demo (`docs/demo.md`), checked offline
+  by `tests/test_demo_transcript.py`. One observed example; the model is not
+  deterministic.
+
 ## PII note
 
 No real personal data appears in any dataset. PII-shaped strings in the

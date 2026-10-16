@@ -18,6 +18,14 @@ Everything above runs **offline** (`--provider hash --no-llm`). The full
 walkthrough, including ingestion and the eval gate, is in
 [`docs/demo.md`](docs/demo.md).
 
+**With local models** (`qwen3:32b` + `nomic-embed-text`, pinned by digest):
+[`docs/demo-local.cast`](docs/demo-local.cast) is an asciinema recording of real
+SSE tokens and one retraction (ADR 8), and
+[`data/demo/stream-transcript.json`](data/demo/stream-transcript.json) is the
+same run frozen and checked offline. It is an observed example, not guaranteed
+behaviour: the retraction showed up on attempt 2 of a pre-declared 10
+([details](docs/demo.md#with-local-models)).
+
 ## Key results
 
 All measured; intervals are 95% Wilson for `k/n`. Every row is recomputed
@@ -492,8 +500,9 @@ Every item below is traceable to a limitation this repo already names, so the
 roadmap closes known gaps instead of chasing new surface:
 
 - [x] **Offline demo** (GIF, `hash` embedder, no LLM) linked at the top of this README.
-- [ ] **Demo with the local models**: the same flow on Ollama, including a
-  streamed answer and a retraction.
+- [x] **Demo with the local models**: real SSE tokens on `qwen3:32b` and one
+  observed retraction (attempt 2 of 10 pre-declared), recorded with asciinema
+  and frozen as a transcript tested offline ([`docs/demo.md`](docs/demo.md#with-local-models)).
 - [x] **Methodology write-up**: [`docs/methodology.md`](docs/methodology.md),
   from the train-set leak to the calibration and the guardrail measurements.
 - [x] **Out-of-domain floor**: the abstain check now requires several distinct
