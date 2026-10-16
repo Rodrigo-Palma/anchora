@@ -2,7 +2,9 @@
 
 Endpoints:
 
-* ``GET  /health``: liveness + store status;
+* ``GET  /health``: liveness + store status (the only public route);
+* ``GET  /docs``, ``/redoc``, ``/openapi.json``: API docs, behind the same gate
+  as the endpoints;
 * ``POST /ingest``: (re)build the in-memory store from the configured corpus;
 * ``POST /ask``: answer a question with the tool-using agent.
 
@@ -32,7 +34,8 @@ from pathlib import Path
 from typing import Annotated
 
 from fastapi import Depends, FastAPI, Header, HTTPException, Request, Response
-from fastapi.responses import StreamingResponse
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
 from anchora import llm
@@ -111,6 +114,10 @@ def create_app() -> FastAPI:
         title="anchora",
         description="Legal-administrative RAG agent (local-first, with guardrails).",
         version=_version(),
+        # The default doc routes are public; they are re-added below behind the key gate.
+        docs_url=None,
+        redoc_url=None,
+        openapi_url=None,
     )
     app.state.store = None
     app.state.docs_indexed = 0
@@ -144,6 +151,20 @@ def create_app() -> FastAPI:
             x_api_key.encode(), settings.api_key.encode()
         ):
             raise HTTPException(status_code=401, detail="invalid or missing API key")
+
+    gated = [Depends(require_api_key)]
+
+    @app.get("/openapi.json", include_in_schema=False, dependencies=gated)
+    def openapi_schema() -> JSONResponse:
+        return JSONResponse(app.openapi())
+
+    @app.get("/docs", include_in_schema=False, dependencies=gated)
+    def swagger_ui() -> HTMLResponse:
+        return get_swagger_ui_html(openapi_url="/openapi.json", title=f"{app.title} - docs")
+
+    @app.get("/redoc", include_in_schema=False, dependencies=gated)
+    def redoc() -> HTMLResponse:
+        return get_redoc_html(openapi_url="/openapi.json", title=f"{app.title} - ReDoc")
 
     def get_store() -> VectorStore:
         if app.state.store is None:

@@ -38,6 +38,10 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   Ollama. The CLI prints the redacted question when it redacted something; the
   API no longer redacts the question twice and reads `pii_redacted` from the
   agent. The demo's "Expected" text now names that observable line.
+- `/docs`, `/redoc` and `/openapi.json` now sit behind the API-key gate. They
+  were FastAPI's default routes, which bypass route dependencies: with a key
+  set they answered `200` without one, and in dev mode a non-loopback peer got
+  `503` on `/ask` but `200` on the docs and the schema.
 
 ## [0.8.0] - 2026-10-16
 

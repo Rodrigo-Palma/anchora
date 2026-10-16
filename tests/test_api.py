@@ -148,6 +148,34 @@ def test_api_key_serves_remote_clients(monkeypatch: pytest.MonkeyPatch) -> None:
     assert ok.status_code == 200
 
 
+_DOC_ROUTES = ("/docs", "/redoc", "/openapi.json")
+
+
+@pytest.mark.parametrize("path", _DOC_ROUTES)
+def test_doc_routes_require_the_api_key(monkeypatch: pytest.MonkeyPatch, path: str) -> None:
+    monkeypatch.setattr(settings, "api_key", "secret")
+    remote = TestClient(create_app(), client=("203.0.113.7", 50000))
+    assert remote.get(path).status_code == 401
+    assert remote.get(path, headers={"x-api-key": "secret"}).status_code == 200
+
+
+@pytest.mark.parametrize("path", _DOC_ROUTES)
+def test_open_mode_hides_doc_routes_from_non_loopback(path: str) -> None:
+    remote = TestClient(create_app(), client=("203.0.113.7", 50000))
+    assert remote.get(path).status_code == 503
+
+
+@pytest.mark.parametrize("path", _DOC_ROUTES)
+def test_open_mode_serves_doc_routes_to_loopback(client: TestClient, path: str) -> None:
+    assert client.get(path).status_code == 200
+
+
+def test_openapi_schema_still_lists_the_endpoints(client: TestClient) -> None:
+    paths = client.get("/openapi.json").json()["paths"]
+    assert {"/health", "/ingest", "/ask", "/ask/stream"} <= set(paths)
+    assert not set(_DOC_ROUTES) & set(paths)
+
+
 @pytest.mark.parametrize("directory", ["/", "/etc", "..", "../../src", "/tmp"])
 def test_ingest_refuses_directories_outside_the_corpus_root(
     client: TestClient, directory: str

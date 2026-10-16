@@ -76,7 +76,9 @@ and cause a 422).
 
 With no key configured the guard does not open the API to everyone: it serves
 loopback peers only and answers `503` to anyone else, so a container published
-on `0.0.0.0` without `ANCHORA_API_KEY` exposes nothing but `/health`. `/ingest`
+on `0.0.0.0` without `ANCHORA_API_KEY` exposes nothing but `/health`. The API
+docs (`/docs`, `/redoc`, `/openapi.json`) sit behind the same gate; FastAPI's
+default doc routes are disabled because they bypass route dependencies. `/ingest`
 resolves its `directory` against `ANCHORA_CORPUS_ROOT` and rejects anything
 outside it; the request used to accept any server path, which let a caller index
 every `.md`/`.txt` the process could read and read them back through `/ask`.
