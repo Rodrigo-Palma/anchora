@@ -42,6 +42,8 @@ def _cmd_ask(args: argparse.Namespace) -> int:
         store = ingest_dir(args.corpus, provider=args.provider)
     agent = Agent(store, k=args.k, provider=args.provider, use_llm=not args.no_llm)
     result = agent.run(args.question)
+    if result.pii_redacted:
+        print(f"PII redacted from the question: {result.question}\n")
     print(result.answer)
     if result.citations:
         print("\nCitations:")

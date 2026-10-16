@@ -52,8 +52,9 @@ the training set, a leak that was found and fixed; see finetuning-results.md.
   out-of-domain floor, but coverage is limited to the ingested statutes.
 - **Small base model.** 1.5B params: fluent Portuguese legal phrasing is not
   guaranteed; grounding and abstention are prioritized over eloquence.
-- **PII.** Inputs are redacted (CPF/email/phone) before the model sees them;
-  redaction is regex-based and not exhaustive.
+- **PII.** The agent redacts the question (CPF/email/phone) before retrieval
+  and before the model sees it, on the CLI and the API alike; the API also
+  redacts the answer. Redaction is regex-based and not exhaustive.
 
 ## Governance
 

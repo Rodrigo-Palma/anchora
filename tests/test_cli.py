@@ -32,3 +32,19 @@ def test_ask_deadline(capsys: pytest.CaptureFixture[str]) -> None:
     )
     assert code == 0
     assert "2026-07-04" in capsys.readouterr().out
+
+
+def test_ask_redacts_pii_in_the_question(capsys: pytest.CaptureFixture[str]) -> None:
+    code = main(
+        [
+            "ask",
+            "My CPF is 123.456.789-09, what is the LAI deadline?",
+            "--provider",
+            "hash",
+            "--no-llm",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "123.456.789-09" not in out
+    assert "[REDACTED_CPF]" in out

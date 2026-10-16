@@ -2,6 +2,9 @@
 
 Flow per question:
 
+0. PII redaction — CPF / e-mail / phone in the question become
+   ``[REDACTED_<KIND>]`` before anything else (tools, retrieval, the model,
+   the result) sees them, so the CLI and the API share one path;
 1. input guardrail — reject prompt-injection / jailbreak;
 2. plan — decide which tools to call (heuristic, deterministic by default);
 3. act — run tools, retrieve grounding chunks;
@@ -71,6 +74,8 @@ class AgentResult:
     trace: Trace = field(default_factory=Trace)
     # Why the output guardrail replaced the model's answer, or None if it did not.
     retraction: str | None = None
+    # True when PII was redacted from the question (``question`` is the redacted form).
+    pii_redacted: bool = False
 
 
 @dataclass
@@ -83,6 +88,7 @@ class PreparedQuestion:
     tool_calls: list[ToolCall] = field(default_factory=list)
     deadline_fact: str | None = None
     result: AgentResult | None = None  # set when no generation is needed
+    pii_redacted: bool = False
 
 
 class Agent:
@@ -103,7 +109,9 @@ class Agent:
         if prepared.result is not None:
             return prepared.result
         with prepared.trace.stage("generation"):
-            answer_text = self._compose_answer(question, prepared.chunks, prepared.deadline_fact)
+            answer_text = self._compose_answer(
+                prepared.question, prepared.chunks, prepared.deadline_fact
+            )
         return self.finalize(prepared, answer_text)
 
     def prepare(self, question: str) -> PreparedQuestion:
@@ -111,8 +119,12 @@ class Agent:
 
         Returns a :class:`PreparedQuestion` whose ``result`` is already final when
         the question was refused or is out of domain, so a streaming caller can
-        stop before calling the model.
+        stop before calling the model. PII in ``question`` is redacted first;
+        ``PreparedQuestion.question`` is the redacted text.
         """
+        redacted = guardrails.redact_pii(question)
+        pii_redacted = redacted != question
+        question = redacted
         trace = Trace()
         with trace.stage("guardrail_input"):
             guard = guardrails.check_input(question)
@@ -124,8 +136,9 @@ class Agent:
                 grounded=False,
                 refused=True,
                 trace=trace,
+                pii_redacted=pii_redacted,
             )
-            return PreparedQuestion(question, trace, result=refused)
+            return PreparedQuestion(question, trace, result=refused, pii_redacted=pii_redacted)
 
         tool_calls: list[ToolCall] = []
 
@@ -148,8 +161,9 @@ class Agent:
                 grounded=True,  # an explicit abstention is itself grounded
                 tool_calls=tool_calls,
                 trace=trace,
+                pii_redacted=pii_redacted,
             )
-            return PreparedQuestion(question, trace, result=abstained)
+            return PreparedQuestion(question, trace, result=abstained, pii_redacted=pii_redacted)
 
         # Always ground answers in retrieved chunks.
         with trace.stage("retrieval"):
@@ -161,7 +175,9 @@ class Agent:
                 output=f"{len(chunks)} excerpts retrieved.",
             )
         )
-        return PreparedQuestion(question, trace, chunks, tool_calls, deadline_fact)
+        return PreparedQuestion(
+            question, trace, chunks, tool_calls, deadline_fact, pii_redacted=pii_redacted
+        )
 
     def finalize(self, prepared: PreparedQuestion, answer_text: str) -> AgentResult:
         """Apply the output guardrail to a complete answer; abstain if ungrounded."""
@@ -177,6 +193,7 @@ class Agent:
             tool_calls=prepared.tool_calls,
             trace=prepared.trace,
             retraction=None if verdict.ok else verdict.reason,
+            pii_redacted=prepared.pii_redacted,
         )
 
     def extractive_answer(self, prepared: PreparedQuestion) -> str:

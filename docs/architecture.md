@@ -14,8 +14,8 @@ offline and reproducibly.
 
 ```
 question
-  → input guardrail (injection / jailbreak)        ── blocked → safe refusal
   → PII redaction (CPF / email / phone)
+  → input guardrail (injection / jailbreak)        ── blocked → safe refusal
   → agent planner
        ├─ date + N days?  → legal_deadline tool (business / calendar days)
        └─ always          → search_documents tool → RAG (embed → cosine top-k)

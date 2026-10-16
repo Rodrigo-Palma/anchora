@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import pytest
+
 from anchora.agent import Agent
 from anchora.store import VectorStore
 
@@ -73,3 +75,34 @@ def test_refusal_and_abstention_have_no_citations(store: VectorStore) -> None:
     abstained = agent.run("What is the best pizza topping in Naples?")
     assert refused.citations == []
     assert abstained.citations == []
+
+
+def test_agent_redacts_pii_before_processing(store: VectorStore) -> None:
+    agent = Agent(store, k=4, provider="hash", use_llm=False)
+    result = agent.run("My CPF is 123.456.789-09, what is the LAI deadline?")
+    assert result.pii_redacted is True
+    assert "123.456.789-09" not in result.question
+    assert "[REDACTED_CPF]" in result.question
+
+
+def test_agent_never_sends_raw_pii_to_the_model(
+    store: VectorStore, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    seen: list[str] = []
+
+    def fake_answer(question: str, chunks: list[object]) -> str:
+        seen.append(question)
+        return ""  # forces the extractive fallback
+
+    monkeypatch.setattr("anchora.agent.llm_answer", fake_answer)
+    agent = Agent(store, k=4, provider="hash", use_llm=True)
+    agent.run("Contact me at joao@example.com: how long is the probationary period?")
+    assert seen
+    assert all("joao@example.com" not in q for q in seen)
+
+
+def test_agent_without_pii_is_not_flagged(store: VectorStore) -> None:
+    agent = Agent(store, k=4, provider="hash", use_llm=False)
+    result = agent.run("What are the bidding modalities?")
+    assert result.pii_redacted is False
+    assert result.question == "What are the bidding modalities?"

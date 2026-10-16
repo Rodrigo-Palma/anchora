@@ -82,10 +82,10 @@ Everything runs **offline with no API cost**: embeddings and generation via Olla
 
 ```mermaid
 flowchart TD
-    Q[User question] --> G1{Input guardrail<br/>injection / jailbreak}
+    Q[User question] --> PII[PII redaction<br/>CPF / email / phone]
+    PII --> G1{Input guardrail<br/>injection / jailbreak}
     G1 -- blocked --> R[Safe refusal]
-    G1 -- ok --> PII[PII redaction<br/>CPF / email / phone]
-    PII --> PLAN[Agent planner]
+    G1 -- ok --> PLAN[Agent planner]
 
     PLAN -->|date + N days| T2[Tool: legal_deadline<br/>business / calendar days]
     PLAN --> T1[Tool: search_documents]

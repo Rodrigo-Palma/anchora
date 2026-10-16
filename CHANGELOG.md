@@ -31,6 +31,14 @@ and the project adheres to [Semantic Versioning](https://semver.org/lang/pt-BR/)
   distinct titles in alphabetical order: it does not follow the `[n]`
   numbering (an answer citing `[1]` could be read against the wrong law).
 
+### Fixed
+- PII in the question is now redacted by the agent itself, before the input
+  guardrail, retrieval and the model, so the CLI gets the same protection as
+  the API. Before, only the API redacted: `anchora ask` sent a raw CPF to
+  Ollama. The CLI prints the redacted question when it redacted something; the
+  API no longer redacts the question twice and reads `pii_redacted` from the
+  agent. The demo's "Expected" text now names that observable line.
+
 ## [0.8.0] - 2026-10-16
 
 Close two roadmap items with measurements: the out-of-domain floor on the

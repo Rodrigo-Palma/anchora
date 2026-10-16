@@ -12,7 +12,8 @@ Cross-cutting concerns handled here:
   only serves loopback clients; anyone else gets 503 (fail closed);
 * ``/ingest`` reads only inside ``settings.corpus_root``, with file-count and
   file-size limits, so a caller cannot index arbitrary server files;
-* PII redaction on every inbound question before it touches the model/logs;
+* PII redaction on every inbound question (done by the agent, the same path
+  the CLI uses) and on every answer before it is returned;
 * the agent's own input/output guardrails (injection block, grounding).
 
 The store is held in app state so it survives across requests; it is built
@@ -177,20 +178,18 @@ def create_app() -> FastAPI:
 
     @app.post("/ask", response_model=AskResponse, dependencies=[Depends(require_api_key)])
     def ask(req: AskRequest) -> AskResponse:
-        pii_found = bool(detect_pii(req.question))
-        question = redact_pii(req.question) if pii_found else req.question
         store = get_store()
         agent = Agent(store, k=req.k, provider=req.provider, use_llm=req.use_llm)
-        result = agent.run(question)
+        result = agent.run(req.question)  # the agent redacts PII in the question
         output_pii = bool(detect_pii(result.answer))
         return AskResponse(
-            question=question,
+            question=result.question,
             answer=redact_pii(result.answer) if output_pii else result.answer,
             sources=result.sources,
             citations=[CitationOut(**asdict(c)) for c in result.citations],
             grounded=result.grounded,
             refused=result.refused,
-            pii_redacted=pii_found,
+            pii_redacted=result.pii_redacted,
             output_pii_redacted=output_pii,
             tool_calls=[ToolCallOut(name=tc.name, output=tc.output) for tc in result.tool_calls],
             trace_id=result.trace.trace_id,
@@ -212,10 +211,9 @@ def create_app() -> FastAPI:
         ``truncated: true``. Model text that turns out to contain PII is
         retracted and replaced by its redacted form (ADR 8).
         """
-        pii_found = bool(detect_pii(req.question))
-        question = redact_pii(req.question) if pii_found else req.question
         agent = Agent(get_store(), k=req.k, provider=req.provider, use_llm=req.use_llm)
-        prepared = agent.prepare(question)
+        prepared = agent.prepare(req.question)  # the agent redacts PII in the question
+        question = prepared.question
 
         def done(result: AgentResult, *, truncated: bool = False, output_pii: bool = False) -> str:
             return _sse(
@@ -227,7 +225,7 @@ def create_app() -> FastAPI:
                     "grounded": result.grounded,
                     "refused": result.refused,
                     "truncated": truncated,
-                    "pii_redacted": pii_found,
+                    "pii_redacted": prepared.pii_redacted,
                     "output_pii_redacted": output_pii,
                     "trace_id": result.trace.trace_id,
                     "timing_ms": {s.name: round(s.duration_ms, 3) for s in result.trace.spans},
